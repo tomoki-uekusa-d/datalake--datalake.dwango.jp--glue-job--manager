@@ -216,11 +216,10 @@ datasource8 = glueContext.create_dynamic_frame.from_catalog(
 )
 df_dim_tieup = datasource8.toDF().filter(col("catalog_end_date").isNull())
 
-# NOTE: 購入情報(作成済みのやつかも)
-# TODO: ここも作らないとダメそうなので作る
+# NOTE: 購入情報
 # fact_purchase
 datasource9 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{fact_purchase_database}",
+    database="new_arrivals", # test側に無いのでここだけ本番と一緒
     table_name=f"{fact_purchase_table}",
     transformation_ctx="datasource0",
 )
