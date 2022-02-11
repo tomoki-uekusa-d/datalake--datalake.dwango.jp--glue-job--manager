@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pyspark = "2.4.3"
+awsglue = {editable = true, ref = "glue-2.0", git = "https://github.com/tomueeen93/aws-glue-libs.git"}
+boto3 = "*"
+pytz = "*"
+
+[dev-packages]
+black = "*"
+flake8 = "*"
+
+[requires]
+python_version = "3.7"
+
+[scripts]
+lint = "flake8 --show-source src"
+format = "black src"
+deploy = "/bin/bash bin/deploy.sh"
+create_job = "/bin/bash bin/create_job.sh"
