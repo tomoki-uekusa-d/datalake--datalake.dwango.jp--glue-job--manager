@@ -19,5 +19,3 @@ python_version = "3.7"
 [scripts]
 lint = "flake8 --show-source src"
 format = "black src"
-deploy = "/bin/bash bin/deploy.sh"
-create_job = "/bin/bash bin/create_job.sh"
