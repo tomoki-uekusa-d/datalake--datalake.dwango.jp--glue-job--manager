@@ -16,8 +16,8 @@ echo "RUN_ID : $RUN_ID"
 echo "Tailing logs by following command"
 echo "    % aws logs tail --follow /aws-glue/jobs/output --filter-pattern $RUN_ID"
 echo "    % aws logs tail --follow /aws-glue/jobs/error --filter-pattern $RUN_ID"
-echo "-------------------------------------"
 
+echo "-------------------------------------"
 while true
 do
   STATUS=$(aws glue get-job-run --job-name $JOB_NAME --run-id $RUN_ID | grep JobRunState | awk '{print $NF}' | sed -e 's/"//g' -e 's/,//g')
@@ -27,8 +27,6 @@ do
   fi
   sleep 5
 done
-
-echo
-echo "-------------------------------------"
+echo "\n-------------------------------------"
 
 aws glue get-job-run --job-name $JOB_NAME --run-id $RUN_ID 
