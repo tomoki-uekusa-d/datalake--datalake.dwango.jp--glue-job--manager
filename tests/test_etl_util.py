@@ -19,11 +19,6 @@ from src.lib import etl_util
 def spark(request):
     spark = SparkSession.builder.master("local").appName("etl-unit-test").getOrCreate()
     request.addfinalizer(lambda: spark.stop())
-
-    # Quite py4j log
-    # logger = logging.getLogger("py4j")
-    # logger.setLevel(logging.WARN)
-
     return spark
 
 
