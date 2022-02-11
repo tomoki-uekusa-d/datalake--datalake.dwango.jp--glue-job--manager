@@ -2,12 +2,18 @@ FROM python:3.7.4
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    build-essential \
-    ca-certificates \
-    git \
-    curl \
-    && apt-get clean && \
+        build-essential \
+        ca-certificates \
+        git \
+        curl \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    apt-add-repository 'deb http://security.debian.org/debian-security stretch/updates main' && \
+    apt-get update && \
+    apt-get install -y openjdk-8-jdk
 
 RUN pip install pipenv
 
