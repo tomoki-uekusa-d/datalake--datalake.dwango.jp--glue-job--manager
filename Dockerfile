@@ -28,7 +28,8 @@ ENV PATH=$PATH:/opt/glue/aws-glue-libs/bin
 RUN chmod -R +x /opt/glue/aws-glue-libs/bin
 RUN glue-setup.sh
 
-COPY . ./scripts
+COPY ./Pipfile ./scripts/Pipfile
+COPY ./Pipfile.lock ./scripts/Pipfile.lock
 
 WORKDIR /opt/glue/scripts
 

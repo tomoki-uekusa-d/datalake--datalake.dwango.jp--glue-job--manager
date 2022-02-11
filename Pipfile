@@ -25,5 +25,5 @@ chispa = "*"
 lint = "flake8 --show-source src"
 format = "black src"
 test = "python -m pytest -v tests"
-test-docker = 'docker run -it --rm glue-development -c "python -m pytest -v tests"'
+test-docker = 'docker run -it --rm -v $PWD/src:/opt/glue/scripts/src -v $PWD/tests:/opt/glue/scripts/tests glue-development -c "python -m pytest -v tests"'
 
