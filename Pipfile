@@ -3,6 +3,9 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[requires]
+python_version = "3.7"
+
 [packages]
 pyspark = "2.4.3"
 awsglue = {editable = true, ref = "glue-2.0", git = "https://github.com/tomueeen93/aws-glue-libs.git"}
@@ -12,10 +15,15 @@ pytz = "*"
 [dev-packages]
 black = "*"
 flake8 = "*"
-
-[requires]
-python_version = "3.7"
+flake8-import-order = "*"
+flake8-docstrings = "*"
+pytest = "*"
+findspark = "*"
+chispa = "*"
 
 [scripts]
 lint = "flake8 --show-source src"
 format = "black src"
+test = "python -m pytest -v tests"
+test-docker = 'docker run -it --rm glue-development -c "python -m pytest -v tests"'
+
