@@ -14,12 +14,14 @@ SCRIPT_DIR=$(cd $(dirname $0); pwd)
 if [ "$DEPLOY_ENV" = "test" ]; then
   AWS_BUCKET="test-glue.in.dwango.jp"
   aws s3 sync $SCRIPT_DIR/../src/$AWS_BUCKET/etl_scripts/new_arrivals/$JOB_NAME s3://$AWS_BUCKET/etl_scripts/new_arrivals/$JOB_NAME
+  aws s3 sync $SCRIPT_DIR/../src/lib s3://$AWS_BUCKET/etl_scripts/new_arrivals/lib
   exit 0
 fi
 
 if [ "$DEPLOY_ENV" = "prod" ]; then
   AWS_BUCKET="glue.in.dwango.jp"
   aws s3 sync $SCRIPT_DIR/../src/$AWS_BUCKET/etl_scripts/new_arrivals/$JOB_NAME s3://$AWS_BUCKET/etl_scripts/new_arrivals/$JOB_NAME
+  aws s3 sync $SCRIPT_DIR/../src/lib s3://$AWS_BUCKET/etl_scripts/new_arrivals/lib
   exit 0
 fi
 

@@ -1,0 +1,248 @@
+import sys, boto3, hashlib, re
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.dynamicframe import DynamicFrame
+from awsglue.job import Job
+from pyspark.sql import SQLContext
+from pyspark.sql.types import *
+from pyspark.sql.functions import *
+from datetime import datetime, date, timedelta
+from pytz import timezone
+
+from etl_util import join_dim_material, explode_tracks, aggregate_musics_to_album
+
+
+def get_today_date_string():
+    d = datetime.now(timezone("Asia/Tokyo"))
+    date_string = d.strftime("%Y-%m-%d")
+    return date_string
+
+today = get_today_date_string()
+
+## Assets
+datacatalog_database = "test_datacatalog"
+fact_purchase_database = "test_new_arrivals"
+fact_purchase_table = "fact_purchase_dwango_jp_android_niconico"
+s3_bucket_name = "etl-datadomain-test-new-arrivals"
+site = "dwango_jp_android"
+corner = "niconico"
+target_date = today
+s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_date}"
+#s3_base_path_csv_filename = f"{target_date}_{site}_{corner}.csv" # NOTE: Unusable with spark api
+
+# @params: [JOB_NAME]
+args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args["JOB_NAME"], args)
+
+datasource31 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_hub_item",
+    transformation_ctx="datasource31",
+)
+dim_hub_item = (
+    datasource31.toDF().filter(col("catalog_end_date").isNull())
+    .withColumn(
+        "delivery_start_date",
+        from_utc_timestamp(col("delivery_start_date"), "Asia/Tokyo"),
+    )
+    .withColumn("delivery_end_date", from_utc_timestamp(col("delivery_end_date"), "Asia/Tokyo"))
+    .filter(col("delivery_start_date") == today)
+)
+datasource32 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_hub_item_and_artist",
+    transformation_ctx="datasource32",
+)
+dim_hub_item_and_artist = datasource32.toDF().filter(col("catalog_end_date").isNull()).select(col("item_id"), col("artist_id"))
+datasource33 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_hub_music",
+    transformation_ctx="datasource33",
+)
+dim_hub_music = (
+    datasource33.toDF().filter(col("catalog_end_date").isNull()).select(col("id"), col("name").alias("music_name"), col("tieup").alias("music_tieup"))
+)
+datasource34 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_hub_artist",
+    transformation_ctx="datasource34",
+)
+dim_hub_artist = datasource34.toDF().filter(col("catalog_end_date").isNull()).select(col("id"), col("name").alias("artist_name"))
+datasource35 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_hub_music_and_item",
+    transformation_ctx="datasource35",
+)
+dim_hub_music_and_item = datasource35.toDF().filter(col("catalog_end_date").isNull()).select(col("item_id"), col("music_id"))
+
+df_dim_material = join_dim_material(
+    dim_hub_item,
+    dim_hub_item_and_artist,
+    dim_hub_music_and_item,
+    dim_hub_music,
+    dim_hub_artist,
+)
+
+datasource2 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_id_provider_zocalo_item_provider",
+    transformation_ctx="datasource2",
+)
+dim_id_provider_zocalo_item_provider = (
+    datasource2.toDF()
+    .filter(col("catalog_end_date").isNull())
+    .select(
+        col("dam2018_collection_id").alias("collection_id"),
+        col("dam2018_asset_id").alias("asset_id"),
+        col("zocalo_item_id").alias("material_id"),
+    )
+    .distinct()
+)
+datasource5 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_hub_music_and_music_genre",
+    transformation_ctx="datasource5",
+)
+df_dim_music_and_music_genre = datasource5.toDF().filter(col("catalog_end_date").isNull())
+datasource6 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{fact_purchase_database}", table_name="johnnys_csv", transformation_ctx="datasource6"
+)
+df_johnnys = datasource6.toDF()
+datasource7 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_hub_music_and_tieup",
+    transformation_ctx="datasource7",
+)
+df_dim_music_and_tieup = datasource7.toDF().filter(col("catalog_end_date").isNull())
+datasource8 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name="dim_hub_tieup",
+    transformation_ctx="datasource8",
+)
+df_dim_tieup = datasource8.toDF().filter(col("catalog_end_date").isNull())
+datasource9 = glueContext.create_dynamic_frame.from_catalog(
+    database="new_arrivals",  # test側に無いのでここだけ本番と一緒
+    table_name=f"{fact_purchase_table}",
+    transformation_ctx="datasource0",
+)
+df_fact_purchase = datasource9.toDF()
+datasource10 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name=f"dim_collection_detail",
+    transformation_ctx="datasource10",
+)
+dim_collection_detail_albums = datasource10.toDF().filter(
+    (col('release_type') == 'Album') &
+    (col('title_titletype') == 'AlbumName') &
+    (col('title_titlelanguage') == 'ja-Hani') &
+    (col('artist_names_language') == 'ja-Hani') &
+    (col('catalog_end_date').isNull())
+)
+datasource11 = glueContext.create_dynamic_frame.from_catalog(
+    database=f"{datacatalog_database}",
+    table_name=f"dim_collection_collection_detail",
+    transformation_ctx="datasource11",
+)
+dim_collection_collection_detail = datasource11.toDF()
+
+dim_albums = dim_collection_detail_albums.join(
+    dim_collection_collection_detail,
+    dim_collection_collection_detail["collection_detail_id"] == dim_collection_detail_albums["id"],
+    "left"
+).join(
+    dim_id_provider_zocalo_item_provider,
+    dim_id_provider_zocalo_item_provider["collection_id"] == dim_collection_detail_albums["id"],
+    "left"
+).join(
+    df_dim_material,
+    dim_id_provider_zocalo_item_provider["material_id"] == df_dim_material["id"],
+    "left"
+).select(
+    df_dim_material["id"].alias("album_material_id"),
+    df_dim_material["name"].alias("album_material_name"),
+    df_dim_material["music_id"].alias("album_music_id"),
+    df_dim_material["music_name"].alias("album_music_name"),
+    df_dim_material["artist_id"].alias("album_artist_id"),
+    df_dim_material["artist_name"].alias("album_artist_name"),
+    df_dim_material["delivery_start_date"].cast("int").alias("album_release_date"),
+    dim_collection_detail_albums["asset_structure"]
+)
+df_album_tracks = explode_tracks(dim_albums)
+
+df_new_arrivals_origin = (
+    df_dim_material
+    .join(
+        dim_id_provider_zocalo_item_provider,
+        dim_id_provider_zocalo_item_provider["material_id"] == df_dim_material["id"],
+        "left",
+    )
+    .join(
+        df_dim_music_and_tieup,
+        df_dim_material["music_id"] == df_dim_music_and_tieup["music_id"],
+        "left",
+    )
+    .join(df_dim_tieup, df_dim_music_and_tieup["tieup_id"] == df_dim_tieup["id"], "left")
+    .join(
+        df_dim_music_and_music_genre,
+        df_dim_material["id"] == df_dim_music_and_music_genre["music_id"],
+        "left",
+    )
+    .join(df_johnnys, df_dim_material["artist_id"] == df_johnnys["artist_id"], "left")
+    .join(
+        df_fact_purchase,
+        df_dim_material["music_id"] == df_fact_purchase["product_id"],
+        "left",
+    ).join(
+        df_album_tracks,
+        dim_id_provider_zocalo_item_provider["asset_id"] == df_album_tracks["album_track_asset_id"],
+        "left",
+    )
+)
+
+df_new_arrivals = (
+    df_new_arrivals_origin.filter(df_dim_tieup["searchable"] != 0)
+    .select(
+        df_dim_material["id"].alias("material_id"),
+        df_dim_material["name"].alias("material_name"),
+        df_dim_material["music_id"],
+        df_dim_material["music_name"],
+        when(df_fact_purchase["count"].isNull(), 0).otherwise(df_fact_purchase["count"]).alias("count"),
+        df_dim_material["artist_id"],
+        df_dim_material["artist_name"],
+        df_dim_material["delivery_start_date"].cast("int").alias("release_date"),
+        when(df_dim_music_and_tieup["pattern_id"].isNull(), 0).otherwise(df_dim_music_and_tieup["pattern_id"]).alias("pattern_id"),
+        when(df_dim_tieup["detailgenre_id"].isNull(), 0).otherwise(df_dim_tieup["detailgenre_id"]).alias("tieup_detail_genre_id"),
+        when(df_dim_tieup["name"].isNull(), "null").otherwise(df_dim_tieup["name"]).cast("string").alias("tieup_name"),
+        when(df_dim_tieup["id"].isNull(), 0).otherwise(df_dim_tieup["id"]).cast("int").alias("tieup_id"),
+        when(df_johnnys["is_johnnys"].isNull(), 0).otherwise(1).alias("johnnys"),
+        df_album_tracks["album_material_id"],
+        df_album_tracks["album_material_name"],
+        df_album_tracks["album_music_id"],
+        df_album_tracks["album_music_name"],
+        df_album_tracks["album_artist_id"],
+        df_album_tracks["album_artist_name"],
+        df_album_tracks["album_release_date"],
+    )
+    .distinct()
+    .orderBy(col("release_date").desc())
+)
+
+df_new_arrivals_aggregated = aggregate_musics_to_album(
+    df_new_arrivals,
+    top_k=100,
+    threshold_num=5,
+    order_column="release_date",
+    group_column="album_material_id"
+)
+
+
+output_path = f"s3://{s3_bucket_name}/{s3_base_path}/"
+df_new_arrivals_aggregated.coalesce(1).write.mode("overwrite").csv(output_path, header=False)
+job.commit()

@@ -14,19 +14,21 @@ RUN_ID=$(aws glue start-job-run --job-name $JOB_NAME | grep JobRunId | awk '{pri
 
 echo "RUN_ID : $RUN_ID"
 echo "Tailing logs by following command"
-echo "    % aws logs tail --follow /aws-glue/jobs/output --filter-pattern $RUN_ID"
-echo "    % aws logs tail --follow /aws-glue/jobs/error --filter-pattern $RUN_ID"
+echo "aws logs tail --filter '?ERROR ?WARN ?INFO' --follow /aws-glue/jobs/output --filter-pattern $RUN_ID"
+echo "aws logs tail --filter '?ERROR ?WARN ?INFO' --follow /aws-glue/jobs/error --filter-pattern $RUN_ID"
 
-echo "-------------------------------------"
 while true
 do
   STATUS=$(aws glue get-job-run --job-name $JOB_NAME --run-id $RUN_ID | grep JobRunState | awk '{print $NF}' | sed -e 's/"//g' -e 's/,//g')
-  printf "\rSTATUS: $STATUS..."
+  printf "\rSTATUS: $STATUS"
   if [ "$STATUS" != "RUNNING" ]; then
+    printf "\rSTATUS: $STATUS"
     break
   fi
   sleep 5
+  printf "\rSTATUS:                        "
+  sleep 0.1
 done
-echo "\n-------------------------------------"
 
+echo
 aws glue get-job-run --job-name $JOB_NAME --run-id $RUN_ID 
