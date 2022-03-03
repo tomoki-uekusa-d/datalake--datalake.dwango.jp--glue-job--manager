@@ -79,12 +79,12 @@ def explode_tracks(df, structure_column="asset_structure"):
     return _df
 
 
-def aggregate_musics_to_album(df, top_k=100, threshold_num=5, order_column="count", group_column="album_material_id"):
+def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="count", group_column="album_music_id"):
     df_with_rank = df.withColumn("rank", F.row_number().over(Window.orderBy(F.col(order_column).desc())))
 
     # df_with_rank.show(truncate=False) # NOTE: DEBUG
 
-    df_target = df_with_rank.filter((F.col("rank") <= top_k))
+    df_target = df_with_rank.filter((F.col("rank") <= top_k)) if top_k else df_with_rank
     df_filtered_top_k_album_count = df_target.select(group_column).groupBy(F.col(group_column)).agg(F.count(group_column).alias("count_album")).filter(
         (F.col("count_album") >= threshold_num)
     ).withColumn("is_album_aggregation", F.lit(True)).select(
@@ -99,8 +99,8 @@ def aggregate_musics_to_album(df, top_k=100, threshold_num=5, order_column="coun
     # df_join_album_info.show(truncate=False) # NOTE: DEBUG
 
     df_target_selected = df_join_album_info.select(
-        F.when(F.col("is_album_aggregation"), F.col("album_material_id")).otherwise(F.col("material_id")).alias("material_id"),
-        F.when(F.col("is_album_aggregation"), F.col("album_material_name")).otherwise(F.col("material_name")).alias("material_name"),
+        F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("material_id")).alias("material_id"),
+        F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("material_name")).alias("material_name"),
         F.when(F.col("is_album_aggregation"), F.col("album_music_id")).otherwise(F.col("music_id")).alias("music_id"),
         F.when(F.col("is_album_aggregation"), F.col("album_music_name")).otherwise(F.col("music_name")).alias("music_name"),
         F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("count")).alias("count"),
@@ -116,4 +116,3 @@ def aggregate_musics_to_album(df, top_k=100, threshold_num=5, order_column="coun
     ).distinct().sort(F.col("transition_type"), F.col(order_column).desc())
 
     return df_target_selected
-

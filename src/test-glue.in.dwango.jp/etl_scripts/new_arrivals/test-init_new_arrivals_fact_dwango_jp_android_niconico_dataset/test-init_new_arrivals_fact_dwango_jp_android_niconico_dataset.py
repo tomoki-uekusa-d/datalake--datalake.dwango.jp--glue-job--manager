@@ -165,12 +165,10 @@ dim_albums = dim_collection_detail_albums.join(
     dim_id_provider_zocalo_item_provider["material_id"] == df_dim_material["id"],
     "left"
 ).select(
-    df_dim_material["id"].alias("album_material_id"),
-    df_dim_material["name"].alias("album_material_name"),
-    df_dim_material["music_id"].alias("album_music_id"),
-    df_dim_material["music_name"].alias("album_music_name"),
+    dim_collection_detail_albums["id"].alias("album_music_id"),
+    dim_collection_detail_albums["title_title"].alias("album_music_name"),
     df_dim_material["artist_id"].alias("album_artist_id"),
-    df_dim_material["artist_name"].alias("album_artist_name"),
+    dim_collection_detail_albums["artist_name_text"].alias("album_artist_name"),
     df_dim_material["delivery_start_date"].cast("int").alias("album_release_date"),
     dim_collection_detail_albums["asset_structure"]
 )
@@ -222,8 +220,6 @@ df_new_arrivals = (
         when(df_dim_tieup["name"].isNull(), "null").otherwise(df_dim_tieup["name"]).cast("string").alias("tieup_name"),
         when(df_dim_tieup["id"].isNull(), 0).otherwise(df_dim_tieup["id"]).cast("int").alias("tieup_id"),
         when(df_johnnys["is_johnnys"].isNull(), 0).otherwise(1).alias("johnnys"),
-        df_album_tracks["album_material_id"],
-        df_album_tracks["album_material_name"],
         df_album_tracks["album_music_id"],
         df_album_tracks["album_music_name"],
         df_album_tracks["album_artist_id"],
@@ -236,10 +232,10 @@ df_new_arrivals = (
 
 df_new_arrivals_aggregated = aggregate_musics_to_album(
     df_new_arrivals,
-    top_k=100,
+    top_k=None,
     threshold_num=5,
     order_column="release_date",
-    group_column="album_material_id"
+    group_column="album_music_id",
 )
 
 

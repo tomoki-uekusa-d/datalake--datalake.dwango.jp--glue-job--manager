@@ -68,12 +68,10 @@ def test_join_material(spark):
 
 def test_explode_tracks(spark):
     test_df = spark.createDataFrame([
-        ('11111', 'album_material_name_1', 'album_music_id_1', 'album_music_name_1', 'album_artist_id_1', 'album_artist_name_1', 'album_release_date_1', '{"Items": [{"AssetId": 100000, "Description": null, "ResourceType": "SecondaryResource", "SequenceNumber": 2}], "Groups": [{"Items": [{"AssetId": 11111, "Description": null, "ResourceType": "PrimaryResource", "SequenceNumber": 1}, {"AssetId": 22222, "Description": null, "ResourceType": "PrimaryResource", "SequenceNumber": 2}, {"AssetId": 33333, "Description": null, "ResourceType": "PrimaryResource", "SequenceNumber": 3}, {"AssetId": 44444, "Description": null, "ResourceType": "PrimaryResource", "SequenceNumber": 4}], "Groups": [], "Titles": [{"Title": "Disc 1", "SubTitle": null, "TitleType": "GroupingTitle", "SubTitleType": null, "TitleLanguage": null, "SubTitleLanguage": null}], "SequenceNumber": 1}]}'),
-    ], ["album_material_id", "album_material_name", "album_music_id", "album_music_name", "album_artist_id", "album_artist_name", "album_release_date", "asset_structure"])
+        ('album_music_id_1', 'album_music_name_1', 'album_artist_id_1', 'album_artist_name_1', 'album_release_date_1', '{"Items": [{"AssetId": 100000, "Description": null, "ResourceType": "SecondaryResource", "SequenceNumber": 2}], "Groups": [{"Items": [{"AssetId": 11111, "Description": null, "ResourceType": "PrimaryResource", "SequenceNumber": 1}, {"AssetId": 22222, "Description": null, "ResourceType": "PrimaryResource", "SequenceNumber": 2}, {"AssetId": 33333, "Description": null, "ResourceType": "PrimaryResource", "SequenceNumber": 3}, {"AssetId": 44444, "Description": null, "ResourceType": "PrimaryResource", "SequenceNumber": 4}], "Groups": [], "Titles": [{"Title": "Disc 1", "SubTitle": null, "TitleType": "GroupingTitle", "SubTitleType": null, "TitleLanguage": null, "SubTitleLanguage": null}], "SequenceNumber": 1}]}'),
+    ], ["album_music_id", "album_music_name", "album_artist_id", "album_artist_name", "album_release_date", "asset_structure"])
     actual_df = etl_util.explode_tracks(test_df)
     excepted_schema = StructType([
-        StructField("album_material_id", StringType(), True),
-        StructField("album_material_name", StringType(), True),
         StructField("album_music_id", StringType(), True),
         StructField("album_music_name", StringType(), True),
         StructField("album_artist_id", StringType(), True),
@@ -82,23 +80,17 @@ def test_explode_tracks(spark):
         StructField("album_track_asset_id", IntegerType(), True),
     ])
     expected_df = spark.createDataFrame([
-        ("11111", "album_material_name_1", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1", 11111),
-        ("11111", "album_material_name_1", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1", 22222),
-        ("11111", "album_material_name_1", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1", 33333),
-        ("11111", "album_material_name_1", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1", 44444),
+        ("album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1", 11111),
+        ("album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1", 22222),
+        ("album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1", 33333),
+        ("album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1", 44444),
     ], excepted_schema)
     
     assert_df_equality(actual_df, expected_df)
 
 
 def test_aggregate_musics_to_album(spark):
-    test_df = spark.createDataFrame([
-        ("material_id_1", "material_name_1", "music_id_1", "music_name_1", 500, "artist_id_1", "artist_name_1", "release_date_1", "pattern_id_1", "tieup_detail_genre_id_1", "tieup_name_1", "tieup_id_1", "johnnys_1", "album_material_id_1", "album_material_name_1", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1"),
-        ("material_id_2", "material_name_2", "music_id_2", "music_name_2", 400, "artist_id_2", "artist_name_2", "release_date_2", "pattern_id_2", "tieup_detail_genre_id_2", "tieup_name_2", "tieup_id_2", "johnnys_2", "album_material_id_2", "album_material_name_2", "album_music_id_2", "album_music_name_2", "album_artist_id_2", "album_artist_name_2", "album_release_date_2"),
-        ("material_id_3", "material_name_3", "music_id_3", "music_name_3", 300, "artist_id_3", "artist_name_3", "release_date_3", "pattern_id_3", "tieup_detail_genre_id_3", "tieup_name_3", "tieup_id_3", "johnnys_3", "album_material_id_1", "album_material_name_1", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1"),
-        ("material_id_4", "material_name_4", "music_id_4", "music_name_4", 200, "artist_id_4", "artist_name_4", "release_date_4", "pattern_id_4", "tieup_detail_genre_id_4", "tieup_name_4", "tieup_id_4", "johnnys_4", "album_material_id_4", "album_material_name_4", "album_music_id_4", "album_music_name_4", "album_artist_id_4", "album_artist_name_4", "album_release_date_4"),
-        ("material_id_5", "material_name_5", "music_id_5", "music_name_5", 100, "artist_id_5", "artist_name_5", "release_date_5", "pattern_id_5", "tieup_detail_genre_id_5", "tieup_name_5", "tieup_id_5", "johnnys_5", "album_material_id_1", "album_material_name_1", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1"),
-    ], StructType([
+    test_schema = StructType([
         StructField("material_id", StringType(), True),
         StructField("material_name", StringType(), True),
         StructField("music_id", StringType(), True),
@@ -112,26 +104,13 @@ def test_aggregate_musics_to_album(spark):
         StructField("tieup_name", StringType(), True),
         StructField("tieup_id", StringType(), True),
         StructField("johnnys", StringType(), True),
-        StructField("album_material_id", StringType(), True),
-        StructField("album_material_name", StringType(), True),
         StructField("album_music_id", StringType(), True),
         StructField("album_music_name", StringType(), True),
         StructField("album_artist_id", StringType(), True),
         StructField("album_artist_name", StringType(), True),
         StructField("album_release_date", StringType(), True),
-    ]))
-    actual_df = etl_util.aggregate_musics_to_album(
-        test_df,
-        top_k=4,
-        threshold_num=2,
-        order_column="count",
-        group_column="album_material_id",
-    )
-    expected_df = spark.createDataFrame([
-        ("album_material_id_1", "album_material_name_1", "album_music_id_1", "album_music_name_1", None, "album_artist_id_1", "album_artist_name_1", "album_release_date_1", None, None, None, None, None, "album"),
-        ("material_id_2", "material_name_2", "music_id_2", "music_name_2", 400, "artist_id_2", "artist_name_2", "release_date_2", "pattern_id_2", "tieup_detail_genre_id_2", "tieup_name_2", "tieup_id_2", "johnnys_2", "music"),
-        ("material_id_4", "material_name_4", "music_id_4", "music_name_4", 200, "artist_id_4", "artist_name_4", "release_date_4", "pattern_id_4", "tieup_detail_genre_id_4", "tieup_name_4", "tieup_id_4", "johnnys_4", "music"),
-    ], StructType([
+    ])
+    expected_schema = StructType([
         StructField("material_id", StringType(), True),
         StructField("material_name", StringType(), True),
         StructField("music_id", StringType(), True),
@@ -146,6 +125,42 @@ def test_aggregate_musics_to_album(spark):
         StructField("tieup_id", StringType(), True),
         StructField("johnnys", StringType(), True),
         StructField("transition_type", StringType(), False),
-    ]))
+    ])
+    test_df = spark.createDataFrame([
+        ("material_id_1", "material_name_1", "music_id_1", "music_name_1", 600, "artist_id_1", "artist_name_1", "release_date_1", "pattern_id_1", "tieup_detail_genre_id_1", "tieup_name_1", "tieup_id_1", "johnnys_1", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1"),
+        ("material_id_2", "material_name_2", "music_id_2", "music_name_2", 500, "artist_id_2", "artist_name_2", "release_date_2", "pattern_id_2", "tieup_detail_genre_id_2", "tieup_name_2", "tieup_id_2", "johnnys_2", "album_music_id_2", "album_music_name_2", "album_artist_id_2", "album_artist_name_2", "album_release_date_2"),
+        ("material_id_3", "material_name_3", "music_id_3", "music_name_3", 400, "artist_id_3", "artist_name_3", "release_date_3", "pattern_id_3", "tieup_detail_genre_id_3", "tieup_name_3", "tieup_id_3", "johnnys_3", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1"),
+        ("material_id_4", "material_name_4", "music_id_4", "music_name_4", 300, "artist_id_4", "artist_name_4", "release_date_4", "pattern_id_4", "tieup_detail_genre_id_4", "tieup_name_4", "tieup_id_4", "johnnys_4", "album_music_id_4", "album_music_name_4", "album_artist_id_4", "album_artist_name_4", "album_release_date_4"),
+        ("material_id_5", "material_name_5", "music_id_5", "music_name_5", 200, "artist_id_5", "artist_name_5", "release_date_5", "pattern_id_5", "tieup_detail_genre_id_5", "tieup_name_5", "tieup_id_5", "johnnys_5", "album_music_id_1", "album_music_name_1", "album_artist_id_1", "album_artist_name_1", "album_release_date_1"),
+        ("material_id_6", "material_name_6", "music_id_6", "music_name_6", 100, "artist_id_6", "artist_name_6", "release_date_6", "pattern_id_6", "tieup_detail_genre_id_6", "tieup_name_6", "tieup_id_6", "johnnys_6", "album_music_id_6", "album_music_name_6", "album_artist_id_6", "album_artist_name_6", "album_release_date_6"),
+    ], test_schema)
+
+    actual_df = etl_util.aggregate_musics_to_album(
+        test_df,
+        top_k=4,
+        threshold_num=2,
+        order_column="count",
+        group_column="album_music_id",
+    )
+    expected_df = spark.createDataFrame([
+        (None, None, "album_music_id_1", "album_music_name_1", None, "album_artist_id_1", "album_artist_name_1", "album_release_date_1", None, None, None, None, None, "album"),
+        ("material_id_2", "material_name_2", "music_id_2", "music_name_2", 500, "artist_id_2", "artist_name_2", "release_date_2", "pattern_id_2", "tieup_detail_genre_id_2", "tieup_name_2", "tieup_id_2", "johnnys_2", "music"),
+        ("material_id_4", "material_name_4", "music_id_4", "music_name_4", 300, "artist_id_4", "artist_name_4", "release_date_4", "pattern_id_4", "tieup_detail_genre_id_4", "tieup_name_4", "tieup_id_4", "johnnys_4", "music"),
+    ], expected_schema)
+    assert_df_equality(actual_df, expected_df, ignore_row_order=False)
+
+    actual_df = etl_util.aggregate_musics_to_album(
+        test_df,
+        top_k=None,
+        threshold_num=2,
+        order_column="count",
+        group_column="album_music_id",
+    )
+    expected_df = spark.createDataFrame([
+        (None, None, "album_music_id_1", "album_music_name_1", None, "album_artist_id_1", "album_artist_name_1", "album_release_date_1", None, None, None, None, None, "album"),
+        ("material_id_2", "material_name_2", "music_id_2", "music_name_2", 500, "artist_id_2", "artist_name_2", "release_date_2", "pattern_id_2", "tieup_detail_genre_id_2", "tieup_name_2", "tieup_id_2", "johnnys_2", "music"),
+        ("material_id_4", "material_name_4", "music_id_4", "music_name_4", 300, "artist_id_4", "artist_name_4", "release_date_4", "pattern_id_4", "tieup_detail_genre_id_4", "tieup_name_4", "tieup_id_4", "johnnys_4", "music"),
+        ("material_id_6", "material_name_6", "music_id_6", "music_name_6", 100, "artist_id_6", "artist_name_6", "release_date_6", "pattern_id_6", "tieup_detail_genre_id_6", "tieup_name_6", "tieup_id_6", "johnnys_6", "music"),
+    ], expected_schema)
 
     assert_df_equality(actual_df, expected_df, ignore_row_order=False)
