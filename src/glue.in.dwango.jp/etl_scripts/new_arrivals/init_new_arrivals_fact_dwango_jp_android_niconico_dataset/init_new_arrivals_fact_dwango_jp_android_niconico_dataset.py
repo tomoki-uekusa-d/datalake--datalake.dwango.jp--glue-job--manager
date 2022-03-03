@@ -168,7 +168,7 @@ dim_albums = dim_collection_detail_albums.join(
     dim_collection_detail_albums["id"].alias("album_music_id"),
     dim_collection_detail_albums["title_title"].alias("album_music_name"),
     df_dim_material["artist_id"].alias("album_artist_id"),
-    dim_collection_detail_albums["artist_name_text"].alias("album_artist_name"),
+    dim_collection_detail_albums["artist_names_text"].alias("album_artist_name"),
     df_dim_material["delivery_start_date"].cast("int").alias("album_release_date"),
     dim_collection_detail_albums["asset_structure"]
 )
