@@ -124,7 +124,6 @@ def test_aggregate_musics_to_album(spark):
         test_df,
         top_k=4,
         threshold_num=2,
-        track_id="material_id",
         order_column="count",
         group_column="album_material_id",
     )

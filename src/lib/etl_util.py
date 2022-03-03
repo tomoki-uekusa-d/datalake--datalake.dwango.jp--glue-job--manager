@@ -90,19 +90,13 @@ def aggregate_musics_to_album(df, top_k=100, threshold_num=5, order_column="coun
     ).withColumn("is_album_aggregation", F.lit(True)).select(
         group_column, "is_album_aggregation"
     )
-    df_join_album_info = df_with_rank.join(
+    df_join_album_info = df_target.join(
         df_filtered_top_k_album_count,
         df[group_column] == df_filtered_top_k_album_count[group_column],
         "left",
     ).drop(df_filtered_top_k_album_count[group_column])
 
     # df_join_album_info.show(truncate=False) # NOTE: DEBUG
-
-    # NOTE: Separate with ranking
-    # df_others = df_with_rank.filter((F.col("rank") > top_k)).withColumn(
-    #     "is_album_aggregation", F.lit(None)
-    # )
-    # df_others.show(truncate=False) # NOTE: DEBUG
 
     df_target_selected = df_join_album_info.select(
         F.when(F.col("is_album_aggregation"), F.col("album_material_id")).otherwise(F.col("material_id")).alias("material_id"),
@@ -120,27 +114,6 @@ def aggregate_musics_to_album(df, top_k=100, threshold_num=5, order_column="coun
         F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("johnnys")).alias("johnnys"),
         F.when(F.col("is_album_aggregation"), F.lit("album")).otherwise(F.lit("music")).alias("transition_type"),
     ).distinct().sort(F.col("transition_type"), F.col(order_column).desc())
-
-    # NOTE: Separate with ranking
-    # df_others_selected = df_others.select(
-    #     F.col("material_id"),
-    #     F.col("material_name"),
-    #     F.col("music_id"),
-    #     F.col("music_name"),
-    #     F.col("count"),
-    #     F.col("artist_id"),
-    #     F.col("artist_name"),
-    #     F.col("release_date"),
-    #     F.col("pattern_id"),
-    #     F.col("tieup_detail_genre_id"),
-    #     F.col("tieup_name"),
-    #     F.col("tieup_id"),
-    #     F.col("johnnys"),
-    #     F.lit("music").alias("transition_type"),
-    # )
-    # df_unioned = df_target_selected.union(df_others_selected)
-    # df_target_selected.show(truncate=False) # NOTE: DEBUG
-    # return df_unioned
 
     return df_target_selected
 
