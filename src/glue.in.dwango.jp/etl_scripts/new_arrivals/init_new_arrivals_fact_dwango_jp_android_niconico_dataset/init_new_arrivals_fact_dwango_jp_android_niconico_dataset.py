@@ -28,9 +28,9 @@ fact_purchase_table = "fact_purchase_dwango_jp_android_niconico"
 s3_bucket_name = "etl-datadomain-new-arrivals"
 site = "dwango_jp_android"
 corner = "niconico"
-target_date = today
-s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_date.replace('-', '')}"
-# s3_base_path_csv_filename = f"{target_date.replace('-', '')}_{site}_{corner}.csv" # NOTE: Unusable with spark api
+target_date = today.replace('-', '')
+s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_date}"
+s3_base_path_csv_filename = f"{target_date}_{site}_{corner}.csv"
 
 # @params: [JOB_NAME]
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
@@ -241,4 +241,19 @@ df_new_arrivals_aggregated = aggregate_musics_to_album(
 
 output_path = f"s3://{s3_bucket_name}/{s3_base_path}/"
 df_new_arrivals_aggregated.coalesce(1).write.mode("overwrite").csv(output_path, header=False)
+
+# NOTE : Rename filename
+URI = sc._gateway.jvm.java.net.URI
+Path = sc._gateway.jvm.org.apache.hadoop.fs.Path
+FileSystem = sc._gateway.jvm.org.apache.hadoop.fs.s3.S3FileSystem
+fs = FileSystem.get(URI(f"s3://{s3_bucket_name}"), glueContext._jsc.hadoopConfiguration())
+
+s3_resource = boto3.resource('s3')
+s3_object_list = s3_resource.Bucket(s3_bucket_name).objects.filter(Prefix=s3_base_path)
+s3_object_names = [item.key for item in s3_object_list]
+fs.rename(
+    Path(f"s3://{s3_bucket_name}/{s3_object_names[0]}"),
+    Path(f"s3://{s3_bucket_name}/{s3_base_path}/{s3_base_path_csv_filename}")
+)
+
 job.commit()
