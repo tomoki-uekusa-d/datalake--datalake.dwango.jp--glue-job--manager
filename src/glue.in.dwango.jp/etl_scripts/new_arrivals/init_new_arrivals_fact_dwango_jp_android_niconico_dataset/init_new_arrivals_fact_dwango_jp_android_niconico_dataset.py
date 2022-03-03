@@ -29,8 +29,8 @@ s3_bucket_name = "etl-datadomain-new-arrivals"
 site = "dwango_jp_android"
 corner = "niconico"
 target_date = today
-s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_date}"
-#s3_base_path_csv_filename = f"{target_date}_{site}_{corner}.csv" # NOTE: Unusable with spark api
+s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_date.replace('-', '')}"
+# s3_base_path_csv_filename = f"{target_date.replace('-', '')}_{site}_{corner}.csv" # NOTE: Unusable with spark api
 
 # @params: [JOB_NAME]
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
