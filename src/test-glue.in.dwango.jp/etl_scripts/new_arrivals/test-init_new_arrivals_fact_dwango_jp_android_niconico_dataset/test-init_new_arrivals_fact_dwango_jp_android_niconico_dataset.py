@@ -158,7 +158,7 @@ dim_albums = dim_collection_detail_albums.join(
     "left"
 ).join(
     dim_id_provider_zocalo_item_provider,
-    dim_id_provider_zocalo_item_provider["collection_id"] == dim_collection_detail_albums["id"],
+    dim_id_provider_zocalo_item_provider["collection_id"] == dim_collection_detail_albums["collection_id"],
     "left"
 ).join(
     df_dim_material,
