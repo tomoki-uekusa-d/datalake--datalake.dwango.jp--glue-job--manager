@@ -99,7 +99,18 @@ def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="sco
 
     # df_join_album_info.show(truncate=False) # NOTE: DEBUG
 
-    df_target_selected = df_join_album_info.select(
+    df_album_with_rank = df_join_album_info.withColumn(
+        "album_row_num", F.row_number().over(Window.partitionBy([F.col("album_music_id"), F.col("is_album_aggregation")]).orderBy(F.col("rank")))
+    ).filter(
+        (
+            (F.col("is_album_aggregation").isNull()) |
+            ((F.col("is_album_aggregation") == True) & (F.col("album_row_num") == 1))
+        )
+    ).sort(F.col("rank"))
+
+    # df_album_with_rank.show(truncate=False) # NOTE: DEBUG
+
+    df_target_selected = df_album_with_rank.select(
         F.when(F.col("is_album_aggregation"), F.col("album_music_id")).otherwise(F.col("music_id")).alias("music_id"),
         F.when(F.col("is_album_aggregation"), F.col("album_music_name")).otherwise(F.col("music_name")).alias("music_name"),
         F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("material_id")).alias("material_id"),
@@ -114,6 +125,6 @@ def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="sco
         F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("johnnys")).alias("johnnys"),
         F.when(F.col("is_album_aggregation"), F.lit("album")).otherwise(F.lit("music")).alias("transition_type"),
         F.when(F.col("is_album_aggregation"), F.lit(0)).otherwise(F.col("score")).alias("score"),
-    ).distinct().sort([F.col("transition_type"), F.col(order_column)], ascending=[1, ascending])
+    )
 
     return df_target_selected
