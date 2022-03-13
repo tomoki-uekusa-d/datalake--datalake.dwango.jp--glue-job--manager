@@ -211,7 +211,7 @@ df_new_arrivals = (
         df_dim_material["name"].alias("material_name"),
         df_dim_material["music_id"],
         df_dim_material["music_name"],
-        when(df_fact_purchase["count"].isNull(), 0).otherwise(df_fact_purchase["count"]).alias("count"),
+        when(df_fact_purchase["count"].isNull(), 0).otherwise(df_fact_purchase["count"]).alias("score"),
         df_dim_material["artist_id"],
         df_dim_material["artist_name"],
         df_dim_material["delivery_start_date"].cast("int").alias("release_date"),
