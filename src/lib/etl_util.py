@@ -99,11 +99,10 @@ def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="cou
     # df_join_album_info.show(truncate=False) # NOTE: DEBUG
 
     df_target_selected = df_join_album_info.select(
-        F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("material_id")).alias("material_id"),
-        F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("material_name")).alias("material_name"),
         F.when(F.col("is_album_aggregation"), F.col("album_music_id")).otherwise(F.col("music_id")).alias("music_id"),
         F.when(F.col("is_album_aggregation"), F.col("album_music_name")).otherwise(F.col("music_name")).alias("music_name"),
-        F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("count")).alias("count"),
+        F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("material_id")).alias("material_id"),
+        F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("material_name")).alias("material_name"),
         F.when(F.col("is_album_aggregation"), F.col("album_artist_id")).otherwise(F.col("artist_id")).alias("artist_id"),
         F.when(F.col("is_album_aggregation"), F.col("album_artist_name")).otherwise(F.col("artist_name")).alias("artist_name"),
         F.when(F.col("is_album_aggregation"), F.col("album_release_date")).otherwise(F.col("release_date")).alias("release_date"),
@@ -113,6 +112,7 @@ def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="cou
         F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("tieup_id")).alias("tieup_id"),
         F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("johnnys")).alias("johnnys"),
         F.when(F.col("is_album_aggregation"), F.lit("album")).otherwise(F.lit("music")).alias("transition_type"),
+        F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("count")).alias("count"),
     ).distinct().sort(F.col("transition_type"), F.col(order_column).desc())
 
     return df_target_selected
