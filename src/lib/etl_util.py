@@ -79,8 +79,9 @@ def explode_tracks(df, structure_column="asset_structure"):
     return _df
 
 
-def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="score", group_column="album_music_id"):
-    df_with_rank = df.withColumn("rank", F.row_number().over(Window.orderBy(F.col(order_column).desc())))
+def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="score", ascending=False, group_column="album_music_id"):
+    window = Window.orderBy(F.col(order_column)) if ascending else Window.orderBy(F.col(order_column).desc())
+    df_with_rank = df.withColumn("rank", F.row_number().over(window))
 
     # df_with_rank.show(truncate=False) # NOTE: DEBUG
 
@@ -113,6 +114,6 @@ def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="sco
         F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("johnnys")).alias("johnnys"),
         F.when(F.col("is_album_aggregation"), F.lit("album")).otherwise(F.lit("music")).alias("transition_type"),
         F.when(F.col("is_album_aggregation"), F.lit(0)).otherwise(F.col("score")).alias("score"),
-    ).distinct().sort(F.col("transition_type"), F.col(order_column).desc())
+    ).distinct().sort([F.col("transition_type"), F.col(order_column)], ascending=[1, ascending])
 
     return df_target_selected

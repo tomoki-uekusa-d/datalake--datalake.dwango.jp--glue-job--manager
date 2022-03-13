@@ -140,6 +140,7 @@ def test_aggregate_musics_to_album(spark):
         top_k=4,
         threshold_num=2,
         order_column="score",
+        ascending=False,
         group_column="album_music_id",
     )
     expected_df = spark.createDataFrame([
@@ -154,6 +155,7 @@ def test_aggregate_musics_to_album(spark):
         top_k=None,
         threshold_num=2,
         order_column="score",
+        ascending=False,
         group_column="album_music_id",
     )
     expected_df = spark.createDataFrame([

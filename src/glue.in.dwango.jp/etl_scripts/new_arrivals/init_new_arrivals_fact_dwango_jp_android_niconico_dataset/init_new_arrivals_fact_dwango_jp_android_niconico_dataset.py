@@ -24,7 +24,6 @@ today = get_today_date_string()
 ## Assets
 datacatalog_database = "datacatalog"
 fact_purchase_database = "new_arrivals"
-fact_purchase_table = "fact_purchase_dwango_jp_android_niconico"
 s3_bucket_name = "etl-datadomain-new-arrivals"
 site = "dwango_jp_android"
 corner = "niconico"
@@ -127,12 +126,6 @@ datasource8 = glueContext.create_dynamic_frame.from_catalog(
     transformation_ctx="datasource8",
 )
 df_dim_tieup = datasource8.toDF().filter(col("catalog_end_date").isNull())
-datasource9 = glueContext.create_dynamic_frame.from_catalog(
-    database="new_arrivals",  # test側に無いのでここだけ本番と一緒
-    table_name=f"{fact_purchase_table}",
-    transformation_ctx="datasource0",
-)
-df_fact_purchase = datasource9.toDF()
 datasource10 = glueContext.create_dynamic_frame.from_catalog(
     database=f"{datacatalog_database}",
     table_name=f"dim_collection_detail",
@@ -194,10 +187,6 @@ df_new_arrivals_origin = (
     )
     .join(df_johnnys, df_dim_material["artist_id"] == df_johnnys["artist_id"], "left")
     .join(
-        df_fact_purchase,
-        df_dim_material["music_id"] == df_fact_purchase["product_id"],
-        "left",
-    ).join(
         df_album_tracks,
         dim_id_provider_zocalo_item_provider["asset_id"] == df_album_tracks["album_track_asset_id"],
         "left",
@@ -211,7 +200,6 @@ df_new_arrivals = (
         df_dim_material["name"].alias("material_name"),
         df_dim_material["music_id"],
         df_dim_material["music_name"],
-        when(df_fact_purchase["count"].isNull(), 0).otherwise(df_fact_purchase["count"]).alias("score"),
         df_dim_material["artist_id"],
         df_dim_material["artist_name"],
         df_dim_material["delivery_start_date"].cast("int").alias("release_date"),
@@ -220,6 +208,7 @@ df_new_arrivals = (
         when(df_dim_tieup["name"].isNull(), "null").otherwise(df_dim_tieup["name"]).cast("string").alias("tieup_name"),
         when(df_dim_tieup["id"].isNull(), 0).otherwise(df_dim_tieup["id"]).cast("int").alias("tieup_id"),
         when(df_johnnys["is_johnnys"].isNull(), 0).otherwise(1).alias("johnnys"),
+        lit(0).alias("score"),
         df_album_tracks["album_music_id"],
         df_album_tracks["album_music_name"],
         df_album_tracks["album_artist_id"],
@@ -235,6 +224,7 @@ df_new_arrivals_aggregated = aggregate_musics_to_album(
     top_k=None,
     threshold_num=5,
     order_column="release_date",
+    ascending=False,
     group_column="album_music_id",
 )
 
