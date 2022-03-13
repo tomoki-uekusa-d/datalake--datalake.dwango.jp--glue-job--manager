@@ -240,7 +240,7 @@ df_new_arrivals_aggregated = aggregate_musics_to_album(
 
 
 output_path = f"s3://{s3_bucket_name}/{s3_base_path}/"
-df_new_arrivals_aggregated.coalesce(1).write.mode("overwrite").csv(output_path, header=False)
+df_new_arrivals_aggregated.coalesce(1).write.mode("overwrite").csv(output_path, header=True)
 
 # NOTE : Rename filename
 URI = sc._gateway.jvm.java.net.URI
