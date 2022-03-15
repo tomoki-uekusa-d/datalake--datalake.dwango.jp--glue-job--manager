@@ -34,34 +34,46 @@ def test_join_material(spark):
         ("222222", "2222", "dim_hub_item_and_artist_2"),
         ("333333", "3333", "dim_hub_item_and_artist_3"),
     ], ["item_id", "artist_id", "column_B"])
+    test_dim_hub_item_and_ftdt = spark.createDataFrame([
+        ("111111", "dim_hub_item_and_ftdt_1"),
+        ("222222", "dim_hub_item_and_ftdt_2"),
+        ("333333", "dim_hub_item_and_ftdt_3"),
+    ], ["item_id", "column_C"])
     test_dim_hub_music_and_item = spark.createDataFrame([
         ("111111", "111", "dim_hub_music_and_item_1"),
         ("222222", "222", "dim_hub_music_and_item_2"),
         ("333333", "333", "dim_hub_music_and_item_3"),
-    ], ["item_id", "music_id", "column_C"])
+    ], ["item_id", "music_id", "column_D"])
+    test_dim_hub_item_and_site_contract = spark.createDataFrame([
+        ("111111", "dim_hub_item_and_site_contract_1"),
+        ("222222", "dim_hub_item_and_site_contract_2"),
+        ("333333", "dim_hub_item_and_site_contract_3"),
+    ], ["item_id", "column_E"])
     test_dim_hub_music = spark.createDataFrame([
         ("111", "dim_hub_music_1"),
         ("222", "dim_hub_music_2"),
         ("333", "dim_hub_music_3"),
-    ], ["id", "column_D"])
+    ], ["id", "column_F"])
     test_dim_hub_artist = spark.createDataFrame([
         ("1111", "dim_hub_artist_1"),
         ("2222", "dim_hub_artist_2"),
         ("3333", "dim_hub_artist_3"),
-    ], ["id", "column_E"])
+    ], ["id", "column_G"])
     actual_df = etl_util.join_dim_material(
         test_dim_hub_item,
         test_dim_hub_item_and_artist,
+        test_dim_hub_item_and_ftdt,
         test_dim_hub_music_and_item,
+        test_dim_hub_item_and_site_contract,
         test_dim_hub_music,
         test_dim_hub_artist,
     )
 
     expected_df = spark.createDataFrame([
-        ("111111", "dim_hub_item_1", "1111", "dim_hub_item_and_artist_1", "111", "dim_hub_music_and_item_1", "dim_hub_music_1", "dim_hub_artist_1"),
-        ("222222", "dim_hub_item_2", "2222", "dim_hub_item_and_artist_2", "222", "dim_hub_music_and_item_2", "dim_hub_music_2", "dim_hub_artist_2"),
-        ("333333", "dim_hub_item_3", "3333", "dim_hub_item_and_artist_3", "333", "dim_hub_music_and_item_3", "dim_hub_music_3", "dim_hub_artist_3"),
-    ], ["id", "column_A", "artist_id", "column_B", "music_id", "column_C", "column_D", "column_E"] )
+        ("111111", "dim_hub_item_1", "1111", "dim_hub_item_and_artist_1", "dim_hub_item_and_ftdt_1", "111", "dim_hub_music_and_item_1", "dim_hub_item_and_site_contract_1", "dim_hub_music_1", "dim_hub_artist_1"),
+        ("222222", "dim_hub_item_2", "2222", "dim_hub_item_and_artist_2", "dim_hub_item_and_ftdt_2", "222", "dim_hub_music_and_item_2", "dim_hub_item_and_site_contract_2", "dim_hub_music_2", "dim_hub_artist_2"),
+        ("333333", "dim_hub_item_3", "3333", "dim_hub_item_and_artist_3", "dim_hub_item_and_ftdt_3", "333", "dim_hub_music_and_item_3", "dim_hub_item_and_site_contract_3", "dim_hub_music_3", "dim_hub_artist_3"),
+    ], ["id", "column_A", "artist_id", "column_B", "column_C", "music_id", "column_D", "column_E", "column_F", "column_G"] )
 
     assert_df_equality(actual_df, expected_df, ignore_row_order=True)
 

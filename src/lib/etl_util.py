@@ -5,7 +5,15 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType, 
 from pyspark.sql.window import Window
 
 
-def join_dim_material(dim_hub_item, dim_hub_item_and_artist, dim_hub_music_and_item, dim_hub_music, dim_hub_artist):
+def join_dim_material(
+        dim_hub_item,
+        dim_hub_item_and_artist,
+        dim_hub_item_and_ftdt,
+        dim_hub_music_and_item,
+        dim_hub_item_and_site_contract,
+        dim_hub_music,
+        dim_hub_artist,
+    ):
     df_dim_material = (
         dim_hub_item.join(
             dim_hub_item_and_artist,
@@ -13,12 +21,16 @@ def join_dim_material(dim_hub_item, dim_hub_item_and_artist, dim_hub_music_and_i
             "left",
         )
         .drop(dim_hub_item_and_artist.item_id)
+        .join(dim_hub_item_and_ftdt, dim_hub_item["id"] == dim_hub_item_and_ftdt["item_id"], "left")
+        .drop(dim_hub_item_and_ftdt.item_id)
         .join(
             dim_hub_music_and_item,
             dim_hub_item["id"] == dim_hub_music_and_item["item_id"],
             "left",
         )
         .drop(dim_hub_music_and_item.item_id)
+        .join(dim_hub_item_and_site_contract, dim_hub_item["id"] == dim_hub_item_and_site_contract["item_id"], "left")
+        .drop(dim_hub_item_and_site_contract.item_id)
         .join(dim_hub_music, dim_hub_music_and_item["music_id"] == dim_hub_music["id"], "left")
         .drop(dim_hub_music.id)
         .join(
@@ -28,7 +40,6 @@ def join_dim_material(dim_hub_item, dim_hub_item_and_artist, dim_hub_music_and_i
         )
         .drop(dim_hub_artist.id)
     )
-    print("df_dim_material:" + str(df_dim_material.count()))
     return df_dim_material
 
 

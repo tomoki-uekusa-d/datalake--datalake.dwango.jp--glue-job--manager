@@ -80,13 +80,39 @@ datasource35 = glueContext.create_dynamic_frame.from_catalog(
     transformation_ctx="datasource35",
 )
 dim_hub_music_and_item = datasource35.toDF().filter(col("catalog_end_date").isNull()).select(col("item_id"), col("music_id"))
+datasource36 = glueContext.create_dynamic_frame.from_catalog(
+    database = f"{datacatalog_database}",
+    table_name = "dim_hub_item_and_site_contract",
+    transformation_ctx = "datasource36"
+)
+dim_hub_item_and_site_contract = datasource36.toDF().filter((col('catalog_end_date').isNull())).select(col("site_name"), col("item_id"))
+datasource37 = glueContext.create_dynamic_frame.from_catalog(
+    database = f"{datacatalog_database}",
+    table_name = "dim_hub_item_and_ftdt",
+    transformation_ctx = "datasource37"
+)
+dim_hub_item_and_ftdt = datasource37.toDF().filter(col('catalog_end_date').isNull()).select(col("item_id"), col("filetype_id"))
+
+# ファイルタイプIDについては以下を確認
+# https://paper.dropbox.com/doc/--BdnYYRzQgQgGHX6inFPKEfHkAQ-jIilKzv0c0lANGtyprzAI
+site_name = "dwango.jp(Android)"
+list_filetype_id = [
+    "10070040", "10070041", "10070060", "10070061", "10070140", "10070141", "10070240", "10070241", "10070340", "10070341", "10070440", "10070441", "10070540", "10070541", "10070640", "10070641", "10070740", "10070840", "10070940", "10071040", "10071041", "10071140", "10071141", "10071240", "10071340", "10071400", "10071540",
+    "281300", "281400",
+    "70040", "70041", "70060", "70061", "70140", "70141", "70240", "70340", "70440", "70540", "70640", "70740", "70840", "70940", "71040", "71140", "71240", "71340", "71400", "71540", "71600", "71700",
+]
 
 df_dim_material = join_dim_material(
     dim_hub_item,
     dim_hub_item_and_artist,
+    dim_hub_item_and_ftdt,
     dim_hub_music_and_item,
+    dim_hub_item_and_site_contract,
     dim_hub_music,
     dim_hub_artist,
+).filter(
+    (col("site_name") == site_name) &
+    (col("filetype_id").isin(list_filetype_id))
 )
 
 datasource2 = glueContext.create_dynamic_frame.from_catalog(
