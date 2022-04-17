@@ -94,6 +94,16 @@ datasource37 = glueContext.create_dynamic_frame.from_catalog(
 )
 dim_hub_item_and_ftdt = datasource37.toDF().filter(col('catalog_end_date').isNull()).select(col("item_id"), col("filetype_id"))
 
+df_dim_material_all = join_dim_material(
+    dim_hub_item,
+    dim_hub_item_and_artist,
+    dim_hub_item_and_ftdt,
+    dim_hub_music_and_item,
+    dim_hub_item_and_site_contract,
+    dim_hub_music,
+    dim_hub_artist,
+)
+
 # ファイルタイプIDについては以下を確認
 # https://paper.dropbox.com/doc/--BdnYYRzQgQgGHX6inFPKEfHkAQ-jIilKzv0c0lANGtyprzAI
 site_name = "dwango.jp(Android)"
@@ -102,16 +112,7 @@ list_filetype_id = [
     "281300", "281400",
     "70040", "70041", "70060", "70061", "70140", "70141", "70240", "70340", "70440", "70540", "70640", "70740", "70840", "70940", "71040", "71140", "71240", "71340", "71400", "71540", "71600", "71700",
 ]
-
-df_dim_material = join_dim_material(
-    dim_hub_item,
-    dim_hub_item_and_artist,
-    dim_hub_item_and_ftdt,
-    dim_hub_music_and_item,
-    dim_hub_item_and_site_contract,
-    dim_hub_music,
-    dim_hub_artist,
-).filter(
+df_dim_material_target = df_dim_material_all.filter(
     (col("site_name") == site_name) &
     (col("filetype_id").isin(list_filetype_id))
 )
@@ -181,38 +182,38 @@ dim_albums = dim_collection_detail_albums.join(
     dim_id_provider_zocalo_item_provider["collection_id"] == dim_collection_collection_detail["collection_id"],
     "left"
 ).join(
-    df_dim_material,
-    dim_id_provider_zocalo_item_provider["material_id"] == df_dim_material["id"],
+    df_dim_material_all,
+    dim_id_provider_zocalo_item_provider["material_id"] == df_dim_material_all["id"],
     "left"
 ).select(
     dim_collection_detail_albums["id"].alias("album_music_id"),
     dim_collection_detail_albums["title_title"].alias("album_music_name"),
-    df_dim_material["artist_id"].alias("album_artist_id"),
+    df_dim_material_all["artist_id"].alias("album_artist_id"),
     dim_collection_detail_albums["artist_names_text"].alias("album_artist_name"),
-    df_dim_material["delivery_start_date"].cast("int").alias("album_release_date"),
+    df_dim_material_all["delivery_start_date"].cast("int").alias("album_release_date"),
     dim_collection_detail_albums["asset_structure"]
 )
 df_album_tracks = explode_tracks(dim_albums)
 
 df_new_arrivals_origin = (
-    df_dim_material
+    df_dim_material_target
     .join(
         dim_id_provider_zocalo_item_provider,
-        dim_id_provider_zocalo_item_provider["material_id"] == df_dim_material["id"],
+        dim_id_provider_zocalo_item_provider["material_id"] == df_dim_material_target["id"],
         "left",
     )
     .join(
         df_dim_music_and_tieup,
-        df_dim_material["music_id"] == df_dim_music_and_tieup["music_id"],
+        df_dim_material_target["music_id"] == df_dim_music_and_tieup["music_id"],
         "left",
     )
     .join(df_dim_tieup, df_dim_music_and_tieup["tieup_id"] == df_dim_tieup["id"], "left")
     .join(
         df_dim_music_and_music_genre,
-        df_dim_material["id"] == df_dim_music_and_music_genre["music_id"],
+        df_dim_material_target["id"] == df_dim_music_and_music_genre["music_id"],
         "left",
     )
-    .join(df_johnnys, df_dim_material["artist_id"] == df_johnnys["artist_id"], "left")
+    .join(df_johnnys, df_dim_material_target["artist_id"] == df_johnnys["artist_id"], "left")
     .join(
         df_album_tracks,
         dim_id_provider_zocalo_item_provider["asset_id"] == df_album_tracks["album_track_asset_id"],
@@ -223,13 +224,13 @@ df_new_arrivals_origin = (
 df_new_arrivals = (
     df_new_arrivals_origin.filter(df_dim_tieup["searchable"] != 0)
     .select(
-        df_dim_material["id"].alias("material_id"),
-        df_dim_material["name"].alias("material_name"),
-        df_dim_material["music_id"],
-        df_dim_material["music_name"],
-        df_dim_material["artist_id"],
-        df_dim_material["artist_name"],
-        df_dim_material["delivery_start_date"].cast("int").alias("release_date"),
+        df_dim_material_target["id"].alias("material_id"),
+        df_dim_material_target["name"].alias("material_name"),
+        df_dim_material_target["music_id"],
+        df_dim_material_target["music_name"],
+        df_dim_material_target["artist_id"],
+        df_dim_material_target["artist_name"],
+        df_dim_material_target["delivery_start_date"].cast("int").alias("release_date"),
         when(df_dim_music_and_tieup["pattern_id"].isNull(), 0).otherwise(df_dim_music_and_tieup["pattern_id"]).alias("pattern_id"),
         when(df_dim_tieup["detailgenre_id"].isNull(), 0).otherwise(df_dim_tieup["detailgenre_id"]).alias("tieup_detail_genre_id"),
         when(df_dim_tieup["name"].isNull(), "null").otherwise(df_dim_tieup["name"]).cast("string").alias("tieup_name"),
