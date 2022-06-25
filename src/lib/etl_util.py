@@ -122,6 +122,7 @@ def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="sco
     # df_album_with_rank.show(truncate=False) # NOTE: DEBUG
 
     df_target_selected = df_album_with_rank.select(
+        F.col("pickup"),
         F.when(F.col("is_album_aggregation"), F.col("album_music_id")).otherwise(F.col("music_id")).alias("music_id"),
         F.when(F.col("is_album_aggregation"), F.col("album_music_name")).otherwise(F.col("music_name")).alias("music_name"),
         F.when(F.col("is_album_aggregation"), F.lit(None)).otherwise(F.col("material_id")).alias("material_id"),
@@ -139,3 +140,35 @@ def aggregate_musics_to_album(df, top_k=None, threshold_num=5, order_column="sco
     )
 
     return df_target_selected
+
+
+def filter_duplicate_tieup_item(df, order_column="score", ascending=False):
+    df_with_rank = df.withColumn("rank", F.row_number().over(Window.partitionBy(F.col("material_id")).orderBy(F.col("tieup_id"))))
+
+    # df_with_rank.show(truncate=False) # NOTE: DEBUG
+
+    df_count_duplicated = df_with_rank.filter(
+        F.col("rank") <= 1
+    ).select(
+        F.col("pickup"),
+        F.col("music_id"),
+        F.col("music_name"),
+        F.col("material_id"),
+        F.col("material_name"),
+        F.col("artist_id"),
+        F.col("artist_name"),
+        F.col("release_date"),
+        F.col("pattern_id"),
+        F.col("tieup_detail_genre_id"),
+        F.col("tieup_name"),
+        F.col("tieup_id"),
+        F.col("johnnys"),
+        F.col("transition_type"),
+        F.col("score"),
+    )
+    
+    df_ordered = df_count_duplicated.orderBy(F.col(order_column)) if ascending else df_count_duplicated.orderBy(F.col(order_column).desc())
+
+    # df_ordered.show(truncate=False) # NOTE: DEBUG
+
+    return df_ordered

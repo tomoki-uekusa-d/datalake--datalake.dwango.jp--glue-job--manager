@@ -11,7 +11,7 @@ from pyspark.sql.functions import *
 from datetime import datetime, date, timedelta
 from pytz import timezone
 
-from etl_util import join_dim_material, explode_tracks, aggregate_musics_to_album
+from etl_util import join_dim_material, explode_tracks, aggregate_musics_to_album, filter_duplicate_tieup_item
 
 
 def get_today_date_string():
@@ -223,6 +223,7 @@ df_new_arrivals_origin = (
 df_new_arrivals = (
     df_new_arrivals_origin.filter(df_dim_tieup["searchable"] != 0)
     .select(
+        lit(1).alias("pickup"),
         df_dim_material_target["id"].alias("material_id"),
         df_dim_material_target["name"].alias("material_name"),
         df_dim_material_target["music_id"],
@@ -255,9 +256,14 @@ df_new_arrivals_aggregated = aggregate_musics_to_album(
     group_column="album_music_id",
 )
 
+df_new_arrivals_filtered_duplicated_tieup = filter_duplicate_tieup_item(
+    df_new_arrivals_aggregated,
+    order_column="release_date",
+    ascending=False,
+)
 
 output_path = f"s3://{s3_bucket_name}/{s3_base_path}/"
-df_new_arrivals_aggregated.coalesce(1).write.mode("overwrite").csv(output_path, header=True)
+df_new_arrivals_filtered_duplicated_tieup.coalesce(1).write.mode("overwrite").csv(output_path, header=True)
 
 # NOTE : Rename filename
 URI = sc._gateway.jvm.java.net.URI

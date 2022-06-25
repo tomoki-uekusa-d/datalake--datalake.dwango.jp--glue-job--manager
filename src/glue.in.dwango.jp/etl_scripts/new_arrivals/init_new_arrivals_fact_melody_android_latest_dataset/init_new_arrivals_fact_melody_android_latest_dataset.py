@@ -22,12 +22,12 @@ def get_today_date_string():
 today = get_today_date_string()
 
 ## Assets
-datacatalog_database = "test_datacatalog"
-fact_purchase_database = "test_new_arrivals"
-s3_bucket_name = "etl-datadomain-test-new-arrivals"
-site = "dwango_jp_android"
-corner = "niconico"
-target_date = today.replace('-', '')
+datacatalog_database = "datacatalog"
+fact_purchase_database = "new_arrivals"
+s3_bucket_name = "etl-datadomain-new-arrivals"
+site = "melody_android"
+corner = "latest"
+target_date = today.replace("-",  "")
 s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_date}"
 s3_base_path_csv_filename = f"{target_date}_{site}_{corner}.csv"
 
@@ -41,57 +41,57 @@ job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
 datasource31 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_hub_item",
-    transformation_ctx="datasource31",
+    database=f"{datacatalog_database}", 
+    table_name="dim_hub_item", 
+    transformation_ctx="datasource31", 
 )
 dim_hub_item = (
     datasource31.toDF().filter(col("catalog_end_date").isNull())
     .withColumn(
-        "delivery_start_date",
+        "delivery_start_date", 
         from_utc_timestamp(col("delivery_start_date"), "Asia/Tokyo"),
     )
-    .withColumn("delivery_end_date", from_utc_timestamp(col("delivery_end_date"), "Asia/Tokyo"))
+    .withColumn("delivery_end_date",  from_utc_timestamp(col("delivery_end_date"), "Asia/Tokyo"))
     .filter(col("delivery_start_date") == today)
 )
 datasource32 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_hub_item_and_artist",
-    transformation_ctx="datasource32",
+    database=f"{datacatalog_database}", 
+    table_name="dim_hub_item_and_artist", 
+    transformation_ctx="datasource32", 
 )
 dim_hub_item_and_artist = datasource32.toDF().filter(col("catalog_end_date").isNull()).select(col("item_id"), col("artist_id"))
 datasource33 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_hub_music",
-    transformation_ctx="datasource33",
+    database=f"{datacatalog_database}", 
+    table_name="dim_hub_music", 
+    transformation_ctx="datasource33", 
 )
 dim_hub_music = (
     datasource33.toDF().filter(col("catalog_end_date").isNull()).select(col("id"), col("name").alias("music_name"), col("tieup").alias("music_tieup"))
 )
 datasource34 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_hub_artist",
-    transformation_ctx="datasource34",
+    database=f"{datacatalog_database}", 
+    table_name="dim_hub_artist", 
+    transformation_ctx="datasource34", 
 )
 dim_hub_artist = datasource34.toDF().filter(col("catalog_end_date").isNull()).select(col("id"), col("name").alias("artist_name"))
 datasource35 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_hub_music_and_item",
-    transformation_ctx="datasource35",
+    database=f"{datacatalog_database}", 
+    table_name="dim_hub_music_and_item", 
+    transformation_ctx="datasource35", 
 )
 dim_hub_music_and_item = datasource35.toDF().filter(col("catalog_end_date").isNull()).select(col("item_id"), col("music_id"))
 datasource36 = glueContext.create_dynamic_frame.from_catalog(
-    database = f"{datacatalog_database}",
-    table_name = "dim_hub_item_and_site_contract",
+    database = f"{datacatalog_database}", 
+    table_name = "dim_hub_item_and_site_contract", 
     transformation_ctx = "datasource36"
 )
-dim_hub_item_and_site_contract = datasource36.toDF().filter((col('catalog_end_date').isNull())).select(col("site_name"), col("item_id"))
+dim_hub_item_and_site_contract = datasource36.toDF().filter((col("catalog_end_date").isNull())).select(col("site_name"), col("item_id"))
 datasource37 = glueContext.create_dynamic_frame.from_catalog(
-    database = f"{datacatalog_database}",
-    table_name = "dim_hub_item_and_ftdt",
+    database = f"{datacatalog_database}", 
+    table_name = "dim_hub_item_and_ftdt", 
     transformation_ctx = "datasource37"
 )
-dim_hub_item_and_ftdt = datasource37.toDF().filter(col('catalog_end_date').isNull()).select(col("item_id"), col("filetype_id"))
+dim_hub_item_and_ftdt = datasource37.toDF().filter(col("catalog_end_date").isNull()).select(col("item_id"), col("filetype_id"))
 
 df_dim_material_all = join_dim_material(
     dim_hub_item,
@@ -105,11 +105,10 @@ df_dim_material_all = join_dim_material(
 
 # ファイルタイプIDについては以下を確認
 # https://paper.dropbox.com/doc/--BdnYYRzQgQgGHX6inFPKEfHkAQ-jIilKzv0c0lANGtyprzAI
-site_name = "dwango.jp(Android)"
+site_name = "dwango.jp(着メロ取り放題)(Android)"
 list_filetype_id = [
-    "10070040", "10070041", "10070060", "10070061", "10070140", "10070141", "10070240", "10070241", "10070340", "10070341", "10070440", "10070441", "10070540", "10070541", "10070640", "10070641", "10070740", "10070840", "10070940", "10071040", "10071041", "10071140", "10071141", "10071240", "10071340", "10071400", "10071540",
-    "281300", "281400",
-    "70040", "70041", "70060", "70061", "70140", "70141", "70240", "70340", "70440", "70540", "70640", "70740", "70840", "70940", "71040", "71140", "71240", "71340", "71400", "71540", "71600", "71700",
+    "010010", "010011", "010020", "010030", "010040", "010041", "010050", "010110", "010111", "010120", "010130", "010140", "010210", "010211", "010220",
+    "010230", "010240", "010310", "010430", "010510", "010520", "010640", "010740", "010810", "010910", "011020", "011140", "011220", "011300", "011410",
 ]
 df_dim_material_target = df_dim_material_all.filter(
     (col("site_name") == site_name) &
@@ -117,9 +116,9 @@ df_dim_material_target = df_dim_material_all.filter(
 )
 
 datasource2 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_id_provider_zocalo_item_provider",
-    transformation_ctx="datasource2",
+    database=f"{datacatalog_database}", 
+    table_name="dim_id_provider_zocalo_item_provider", 
+    transformation_ctx="datasource2", 
 )
 dim_id_provider_zocalo_item_provider = (
     datasource2.toDF()
@@ -132,43 +131,43 @@ dim_id_provider_zocalo_item_provider = (
     .distinct()
 )
 datasource5 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_hub_music_and_music_genre",
-    transformation_ctx="datasource5",
+    database=f"{datacatalog_database}", 
+    table_name="dim_hub_music_and_music_genre", 
+    transformation_ctx="datasource5", 
 )
 df_dim_music_and_music_genre = datasource5.toDF().filter(col("catalog_end_date").isNull())
 datasource6 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{fact_purchase_database}", table_name="johnnys_csv", transformation_ctx="datasource6"
+    database=f"{fact_purchase_database}",  table_name="johnnys_csv",  transformation_ctx="datasource6"
 )
 df_johnnys = datasource6.toDF()
 datasource7 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_hub_music_and_tieup",
-    transformation_ctx="datasource7",
+    database=f"{datacatalog_database}", 
+    table_name="dim_hub_music_and_tieup", 
+    transformation_ctx="datasource7", 
 )
 df_dim_music_and_tieup = datasource7.toDF().filter(col("catalog_end_date").isNull())
 datasource8 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name="dim_hub_tieup",
-    transformation_ctx="datasource8",
+    database=f"{datacatalog_database}", 
+    table_name="dim_hub_tieup", 
+    transformation_ctx="datasource8", 
 )
 df_dim_tieup = datasource8.toDF().filter(col("catalog_end_date").isNull())
 datasource10 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name=f"dim_collection_detail",
-    transformation_ctx="datasource10",
+    database=f"{datacatalog_database}", 
+    table_name=f"dim_collection_detail", 
+    transformation_ctx="datasource10", 
 )
 dim_collection_detail_albums = datasource10.toDF().filter(
-    (col('release_type') == 'Album') &
-    (col('title_titletype') == 'AlbumName') &
-    (col('title_titlelanguage') == 'ja-Hani') &
-    (col('artist_names_language') == 'ja-Hani') &
-    (col('catalog_end_date').isNull())
+    (col("release_type") == "Album") &
+    (col("title_titletype") == "AlbumName") &
+    (col("title_titlelanguage") == "ja-Hani") &
+    (col("artist_names_language") == "ja-Hani") &
+    (col("catalog_end_date").isNull())
 )
 datasource11 = glueContext.create_dynamic_frame.from_catalog(
-    database=f"{datacatalog_database}",
-    table_name=f"dim_collection_collection_detail",
-    transformation_ctx="datasource11",
+    database=f"{datacatalog_database}", 
+    table_name=f"dim_collection_collection_detail", 
+    transformation_ctx="datasource11", 
 )
 dim_collection_collection_detail = datasource11.toDF()
 
@@ -199,24 +198,24 @@ df_new_arrivals_origin = (
     .join(
         dim_id_provider_zocalo_item_provider,
         dim_id_provider_zocalo_item_provider["material_id"] == df_dim_material_target["id"],
-        "left",
+        "left", 
     )
     .join(
         df_dim_music_and_tieup,
         df_dim_material_target["music_id"] == df_dim_music_and_tieup["music_id"],
-        "left",
+        "left", 
     )
     .join(df_dim_tieup, df_dim_music_and_tieup["tieup_id"] == df_dim_tieup["id"], "left")
     .join(
         df_dim_music_and_music_genre,
         df_dim_material_target["id"] == df_dim_music_and_music_genre["music_id"],
-        "left",
+        "left", 
     )
     .join(df_johnnys, df_dim_material_target["artist_id"] == df_johnnys["artist_id"], "left")
     .join(
         df_album_tracks,
         dim_id_provider_zocalo_item_provider["asset_id"] == df_album_tracks["album_track_asset_id"],
-        "left",
+        "left", 
     )
 )
 
@@ -251,14 +250,14 @@ df_new_arrivals_aggregated = aggregate_musics_to_album(
     df_new_arrivals,
     top_k=None,
     threshold_num=5,
-    order_column="release_date",
+    order_column="release_date", 
     ascending=False,
-    group_column="album_music_id",
+    group_column="album_music_id", 
 )
 
 df_new_arrivals_filtered_duplicated_tieup = filter_duplicate_tieup_item(
     df_new_arrivals_aggregated,
-    order_column="release_date",
+    order_column="release_date", 
     ascending=False,
 )
 
@@ -271,7 +270,7 @@ Path = sc._gateway.jvm.org.apache.hadoop.fs.Path
 FileSystem = sc._gateway.jvm.org.apache.hadoop.fs.s3.S3FileSystem
 fs = FileSystem.get(URI(f"s3://{s3_bucket_name}"), glueContext._jsc.hadoopConfiguration())
 
-s3_resource = boto3.resource('s3')
+s3_resource = boto3.resource("s3")
 s3_object_list = s3_resource.Bucket(s3_bucket_name).objects.filter(Prefix=s3_base_path)
 s3_object_names = [item.key for item in s3_object_list]
 fs.rename(

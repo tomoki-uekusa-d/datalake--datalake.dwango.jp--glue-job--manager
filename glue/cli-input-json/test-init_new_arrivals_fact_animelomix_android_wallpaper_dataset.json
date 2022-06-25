@@ -1,0 +1,19 @@
+{
+  "Name": "test-init_new_arrivals_fact_animelomix_android_wallpaper_dataset",
+  "Role": "glue_stripe-counter",
+  "Command": {
+    "Name": "glueetl",
+    "ScriptLocation": "s3://test-glue.in.dwango.jp/etl_scripts/new_arrivals/test-init_new_arrivals_fact_animelomix_android_wallpaper_dataset/test-init_new_arrivals_fact_animelomix_android_wallpaper_dataset.py",
+    "PythonVersion": "3"
+  },
+  "DefaultArguments": {
+    "--TempDir": "s3://test-glue.in.dwango.jp/tmp",
+    "--extra-py-files": "s3://test-glue.in.dwango.jp/etl_scripts/new_arrivals/lib/etl_util.py",
+    "--job-bookmark-option": "job-bookmark-disable",
+    "--job-language": "python"
+  },
+  "MaxRetries": 0,
+  "AllocatedCapacity": 10,
+  "Timeout": 2880,
+  "GlueVersion": "2.0"
+}

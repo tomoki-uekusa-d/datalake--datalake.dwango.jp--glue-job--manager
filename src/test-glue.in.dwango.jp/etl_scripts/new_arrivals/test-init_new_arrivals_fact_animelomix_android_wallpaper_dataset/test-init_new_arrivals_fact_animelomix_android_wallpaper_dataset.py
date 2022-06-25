@@ -25,8 +25,8 @@ today = get_today_date_string()
 datacatalog_database = "test_datacatalog"
 fact_purchase_database = "test_new_arrivals"
 s3_bucket_name = "etl-datadomain-test-new-arrivals"
-site = "dwango_jp_android"
-corner = "niconico"
+site = "animelomix_android"
+corner = "wallpaper"
 target_date = today.replace('-', '')
 s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_date}"
 s3_base_path_csv_filename = f"{target_date}_{site}_{corner}.csv"
@@ -105,12 +105,8 @@ df_dim_material_all = join_dim_material(
 
 # ファイルタイプIDについては以下を確認
 # https://paper.dropbox.com/doc/--BdnYYRzQgQgGHX6inFPKEfHkAQ-jIilKzv0c0lANGtyprzAI
-site_name = "dwango.jp(Android)"
-list_filetype_id = [
-    "10070040", "10070041", "10070060", "10070061", "10070140", "10070141", "10070240", "10070241", "10070340", "10070341", "10070440", "10070441", "10070540", "10070541", "10070640", "10070641", "10070740", "10070840", "10070940", "10071040", "10071041", "10071140", "10071141", "10071240", "10071340", "10071400", "10071540",
-    "281300", "281400",
-    "70040", "70041", "70060", "70061", "70140", "70141", "70240", "70340", "70440", "70540", "70640", "70740", "70840", "70940", "71040", "71140", "71240", "71340", "71400", "71540", "71600", "71700",
-]
+site_name = "アニメロミックス(Android)"
+list_filetype_id = ['030300']
 df_dim_material_target = df_dim_material_all.filter(
     (col("site_name") == site_name) &
     (col("filetype_id").isin(list_filetype_id))
