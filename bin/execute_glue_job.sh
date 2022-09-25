@@ -13,9 +13,10 @@ set -eu
 RUN_ID=$(aws glue start-job-run --job-name $JOB_NAME | grep JobRunId | awk '{print $NF}' | sed -e 's/"//g')
 
 echo "RUN_ID : $RUN_ID"
+echo "JOB_URL : https://ap-northeast-1.console.aws.amazon.com/gluestudio/home?region=ap-northeast-1#/job/$JOB_NAME/run/$RUN_ID"
 echo "Tailing logs by following command"
-echo "aws logs tail --filter '?ERROR ?WARN ?INFO' --follow /aws-glue/jobs/output --filter-pattern $RUN_ID"
-echo "aws logs tail --filter '?ERROR ?WARN ?INFO' --follow /aws-glue/jobs/error --filter-pattern $RUN_ID"
+echo "aws logs tail --filter '?ERROR ?WARN ?INFO' --follow /aws-glue/jobs/output --log-stream-names $RUN_ID"
+echo "aws logs tail --filter '?ERROR ?WARN ?INFO' --follow /aws-glue/jobs/error --log-stream-names $RUN_ID"
 
 while true
 do
@@ -26,7 +27,7 @@ do
     break
   fi
   sleep 5
-  printf "\rSTATUS:                        "
+  printf "\rSTATUS:        "
   sleep 0.1
 done
 
