@@ -1,0 +1,19 @@
+{
+  "Name": "init_monthly_new_arrivals_fact_melody_android_latest_dataset",
+  "Role": "glue_stripe-counter",
+  "Command": {
+    "Name": "glueetl",
+    "ScriptLocation": "s3://glue.in.dwango.jp/etl_scripts/new_arrivals/init_monthly_new_arrivals_fact_melody_android_latest_dataset/init_monthly_new_arrivals_fact_melody_android_latest_dataset.py",
+    "PythonVersion": "3"
+  },
+  "DefaultArguments": {
+    "--TempDir": "s3://glue.in.dwango.jp/tmp",
+    "--extra-py-files": "s3://glue.in.dwango.jp/etl_scripts/new_arrivals/lib/etl_util.py",
+    "--job-bookmark-option": "job-bookmark-disable",
+    "--job-language": "python"
+  },
+  "MaxRetries": 0,
+  "AllocatedCapacity": 10,
+  "Timeout": 2880,
+  "GlueVersion": "2.0"
+}
