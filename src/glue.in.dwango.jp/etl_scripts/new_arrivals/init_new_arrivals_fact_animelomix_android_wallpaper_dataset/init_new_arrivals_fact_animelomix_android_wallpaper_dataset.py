@@ -14,12 +14,12 @@ from pytz import timezone
 from etl_util import join_dim_material, explode_tracks, aggregate_musics_to_album, filter_duplicate_tieup_item
 
 
-def get_today_date_string():
+def get_today_month_string():
     d = datetime.now(timezone("Asia/Tokyo"))
-    date_string = d.strftime("%Y-%m-%d")
+    date_string = d.strftime("%Y-%m")
     return date_string
 
-today = get_today_date_string()
+this_month = get_today_month_string()
 
 ## Assets
 datacatalog_database = "datacatalog"
@@ -27,9 +27,9 @@ fact_purchase_database = "new_arrivals"
 s3_bucket_name = "etl-datadomain-new-arrivals"
 site = "animelomix_android"
 corner = "wallpaper"
-target_date = today.replace('-', '')
-s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_date}"
-s3_base_path_csv_filename = f"{target_date}_{site}_{corner}.csv"
+target_month = this_month.replace('-', '')
+s3_base_path = f"fact_new_arrivals/site={site}/corner={corner}/target_date={target_month}01"
+s3_base_path_csv_filename = f"{target_month}01_{site}_{corner}.csv"
 
 # @params: [JOB_NAME]
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
@@ -52,7 +52,7 @@ dim_hub_item = (
         from_utc_timestamp(col("delivery_start_date"), "Asia/Tokyo"),
     )
     .withColumn("delivery_end_date", from_utc_timestamp(col("delivery_end_date"), "Asia/Tokyo"))
-    .filter(col("delivery_start_date") == today)
+    .filter(col("delivery_start_date").like(f"{this_month}%"))
 )
 datasource32 = glueContext.create_dynamic_frame.from_catalog(
     database=f"{datacatalog_database}",
