@@ -19,7 +19,7 @@ def get_today_month_string():
     date_string = d.strftime("%Y-%m")
     return date_string
 
-if("--TARGET_MONTH" in sys.argv):
+if "--TARGET_MONTH" in sys.argv:
     s_args = getResolvedOptions(sys.argv, ['TARGET_MONTH'])
     this_month = s_args['TARGET_MONTH']
 else:
