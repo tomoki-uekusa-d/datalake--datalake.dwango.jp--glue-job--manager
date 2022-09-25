@@ -19,8 +19,11 @@ def get_today_month_string():
     date_string = d.strftime("%Y-%m")
     return date_string
 
-this_month = get_today_month_string()
-# today = '2018-12-27'
+if "--TARGET_MONTH" in sys.argv:
+    s_args = getResolvedOptions(sys.argv, ['TARGET_MONTH'])
+    this_month = s_args['TARGET_MONTH']
+else:
+    this_month = get_today_month_string()
 
 ## Assets
 datacatalog_database = "datacatalog"
