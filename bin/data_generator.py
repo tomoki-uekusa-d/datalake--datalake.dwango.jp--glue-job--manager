@@ -27,6 +27,7 @@ class DataGenerator():
         corner,
         bucket,
         skip_exists,
+        dryrun,
         skip_months,
         target_row_count=101, # including header line
         wait_seconds=300,
@@ -40,9 +41,12 @@ class DataGenerator():
         self.bucket = bucket
         self.wait_seconds = int(wait_seconds)
         self.skip_exists = skip_exists
+        self.dryrun = dryrun
         self.skip_months = skip_months
         self.executioning_month = start_month if start_month else datetime.now().strftime("%Y%m")
-        self.executioned_months = [self.executioning_month]
+        self.scheduled_months = []
+        self.executioned_months = [self.start_month]
+        self.limit_array_length = 100
 
     
     def execute_job(self):
@@ -90,7 +94,7 @@ class DataGenerator():
 
     def get_total_rows(self):
         total_rows = 0
-        for target_month in self.executioned_months:
+        for target_month in self.scheduled_months:
             row_number = self.get_rows(target_month)
             total_rows += row_number
         logger.info(f"Total Row number: {total_rows}")
@@ -107,7 +111,7 @@ class DataGenerator():
 
 
     def is_complete(self):
-        return self.get_total_rows() >= self.target_row_count
+        return self.get_total_rows() >= self.target_row_count or self.executioning_month == self.backward_month(self.end_month)
 
 
     def backward_month(self, from_month):
@@ -117,6 +121,8 @@ class DataGenerator():
 
 
     def is_skip(self):
+        if self.dryrun:
+            return True
         if self.skip_exists:
             if self.executioning_month in self.skip_months.split(","):
                 return True
@@ -124,8 +130,20 @@ class DataGenerator():
             return False
 
 
+    def generate_month_array(self, start_month, end_month):
+        generated_array = []
+        execution_month = start_month
+        while True:
+            generated_array.append(execution_month)
+            execution_month = self.backward_month(execution_month)
+            if execution_month == end_month or len(generated_array) >= self.limit_array_length:
+                break
+        return generated_array
+
+
     def main(self):
         logger.info(f"Start generating target data, JOB_NAME: {self.job_name}, TARGET_ROW_COUNT: {self.target_row_count}")
+        self.scheduled_months = self.generate_month_array(start_month=self.start_month, end_month=self.end_month)
         while not self.is_complete():
             logger.info(f"Checking monthly data, EXECUTIONING_MONTH: {self.executioning_month}")
             if not self.is_skip():
@@ -141,13 +159,14 @@ class DataGenerator():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-jn', '--job_name', help='job name', type=str, required=True)
-    parser.add_argument('-sm', '--start_month', help='start month YYYYMM', type=str)
-    parser.add_argument('-em', '--end_month', help='end month YYYYMM', type=str)
+    parser.add_argument('-sm', '--start_month', help='start month YYYYMM', type=str, required=True)
+    parser.add_argument('-em', '--end_month', help='end month YYYYMM', type=str, required=True)
     parser.add_argument('-b', '--bucket', help='bucket', type=str, default="etl-datadomain-new-arrivals")
     parser.add_argument('-s', '--site', help='site', type=str)
     parser.add_argument('-c', '--corner', help='corner', type=str)
-    parser.add_argument('-se', '--skip_exists', help='skip exists', type=bool, default=False)
-    parser.add_argument('-sms', '--skip_months', help='skipped months e.g. "202209,202208"', type=str, default=False)
+    parser.add_argument('-se', '--skip_exists', help='skip exists', action="store_true", default=False)
+    parser.add_argument('-dr', '--dryrun', help='dryrun', action="store_true", default=False)
+    parser.add_argument('-sms', '--skip_months', help='skipped months e.g. "202209,202208"', type=str, default="")
     args = parser.parse_args()
 
     dg = DataGenerator(
@@ -158,6 +177,7 @@ if __name__ == "__main__":
         site=args.site,
         corner=args.corner,
         skip_exists=args.skip_exists,
+        dryrun=args.dryrun,
         skip_months=args.skip_months,
     )
     dg.main()
