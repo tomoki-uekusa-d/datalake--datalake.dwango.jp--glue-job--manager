@@ -173,6 +173,8 @@ datasource11 = glueContext.create_dynamic_frame.from_catalog(
     transformation_ctx="datasource11",
 )
 dim_collection_collection_detail = datasource11.toDF()
+if dim_collection_collection_detail.count() <= 0:
+    dim_collection_collection_detail = spark.sql(f"SELECT * FROM {datacatalog_database}.dim_collection_collection_detail")
 
 dim_albums = dim_collection_detail_albums.join(
     dim_collection_collection_detail,
@@ -223,7 +225,7 @@ df_new_arrivals_origin = (
 )
 
 df_new_arrivals = (
-    df_new_arrivals_origin.filter(df_dim_tieup["searchable"] != 0)
+    df_new_arrivals_origin.filter((df_dim_tieup["searchable"] != 0) | (df_dim_tieup["searchable"].isNull()))
     .select(
         lit(1).alias("pickup"),
         df_dim_material_target["id"].alias("material_id"),
