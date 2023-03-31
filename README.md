@@ -16,3 +16,11 @@ Development datalake--datalake.dwango.jp--glue-job
 % docker build -t glue-development .
 % pipenv run test-docker
 ```
+
+### Tips
+
+Deploy all
+
+```console
+find glue/cli-input-json -type f | grep -v 'test' | awk -F'/' '{print $NF}' | awk -F'.' '{print $1}' | xargs -L1 -I{} bash -c 'bash bin/deploy_glue_script.sh prod {}'
+```
