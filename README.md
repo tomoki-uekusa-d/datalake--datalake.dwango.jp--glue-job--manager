@@ -25,6 +25,38 @@ Deploy all
 find glue/cli-input-json -type f | grep -v 'test' | awk -F'/' '{print $NF}' | awk -F'.' '{print $1}' | xargs -L1 -I{} bash -c 'bash bin/deploy_glue_script.sh prod {}'
 ```
 
+Execute Single Job
+
+```console
+% bash bin/execute_glue_job.sh init_new_arrivals_fact_animelomix_android_voice_dataset
+RUN_ID : jr_a65551a38f92edca7be01f735747a0bb75938b38623df0a732e1fac4ebc58f83
+JOB_URL : https://ap-northeast-1.console.aws.amazon.com/gluestudio/home?region=ap-northeast-1#/job/init_new_arrivals_fact_animelomix_android_voice_dataset/run/jr_a65551a38f92edca7be01f735747a0bb75938b38623df0a732e1fac4ebc58f83
+Tailing logs by following command
+aws logs tail --filter '?ERROR ?WARN ?INFO' --follow /aws-glue/jobs/output --log-stream-names jr_a65551a38f92edca7be01f735747a0bb75938b38623df0a732e1fac4ebc58f83
+aws logs tail --filter '?ERROR ?WARN ?INFO' --follow /aws-glue/jobs/error --log-stream-names jr_a65551a38f92edca7be01f735747a0bb75938b38623df0a732e1fac4ebc58f83
+STATUS: SUCCEEDED
+{
+    "JobRun": {
+        "Id": "jr_a65551a38f92edca7be01f735747a0bb75938b38623df0a732e1fac4ebc58f83",
+        "Attempt": 0,
+        "JobName": "init_new_arrivals_fact_animelomix_android_voice_dataset",
+        "StartedOn": "2023-03-31T16:35:22.926000+09:00",
+        "LastModifiedOn": "2023-03-31T16:55:29.420000+09:00",
+        "CompletedOn": "2023-03-31T16:55:29.420000+09:00",
+        "JobRunState": "SUCCEEDED",
+        "PredecessorRuns": [],
+        "AllocatedCapacity": 10,
+        "ExecutionTime": 1199,
+        "Timeout": 2880,
+        "MaxCapacity": 10.0,
+        "WorkerType": "G.1X",
+        "NumberOfWorkers": 10,
+        "LogGroupName": "/aws-glue/jobs",
+        "GlueVersion": "2.0"
+    }
+}
+```
+
 Use DataGenerator
 
 ```console
