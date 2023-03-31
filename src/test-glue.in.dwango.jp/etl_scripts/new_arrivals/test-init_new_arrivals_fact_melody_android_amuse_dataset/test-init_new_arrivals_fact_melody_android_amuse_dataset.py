@@ -14,10 +14,16 @@ from pytz import timezone
 from etl_util import join_dim_material, explode_tracks, aggregate_musics_to_album, filter_duplicate_tieup_item, load_partition
 
 
-def get_today_date_string():
+def get_today_month_string():
     d = datetime.now(timezone("Asia/Tokyo"))
-    date_string = d.strftime("%Y-%m-%d")
+    date_string = d.strftime("%Y-%m")
     return date_string
+
+if "--TARGET_MONTH" in sys.argv:
+    s_args = getResolvedOptions(sys.argv, ['TARGET_MONTH'])
+    this_month = s_args['TARGET_MONTH']
+else:
+    this_month = get_today_month_string()
 
 today = get_today_date_string()
 # today = '2018-12-27'
@@ -53,7 +59,7 @@ dim_hub_item = (
         from_utc_timestamp(col("delivery_start_date"), "Asia/Tokyo"),
     )
     .withColumn("delivery_end_date", from_utc_timestamp(col("delivery_end_date"), "Asia/Tokyo"))
-    .filter(col("delivery_start_date") == today)
+    .filter(col("delivery_start_date").like(f"{this_month}%"))
 )
 datasource32 = glueContext.create_dynamic_frame.from_catalog(
     database=f"{datacatalog_database}",
@@ -170,6 +176,8 @@ datasource11 = glueContext.create_dynamic_frame.from_catalog(
     transformation_ctx="datasource11",
 )
 dim_collection_collection_detail = datasource11.toDF()
+if dim_collection_collection_detail.count() <= 0:
+    dim_collection_collection_detail = spark.sql(f"SELECT * FROM {datacatalog_database}.dim_collection_collection_detail")
 
 dim_albums = dim_collection_detail_albums.join(
     dim_collection_collection_detail,
@@ -220,7 +228,7 @@ df_new_arrivals_origin = (
 )
 
 df_new_arrivals = (
-    df_new_arrivals_origin.filter(df_dim_tieup["searchable"] != 0)
+    df_new_arrivals_origin.filter((df_dim_tieup["searchable"] != 0) | (df_dim_tieup["searchable"].isNull()))
     .select(
         lit(1).alias("pickup"),
         df_dim_material_target["id"].alias("material_id"),

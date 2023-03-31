@@ -14,10 +14,16 @@ from pytz import timezone
 from etl_util import join_dim_material, explode_tracks, aggregate_musics_to_album, filter_duplicate_tieup_item, load_partition
 
 
-def get_today_date_string():
+def get_today_month_string():
     d = datetime.now(timezone("Asia/Tokyo"))
-    date_string = d.strftime("%Y-%m-%d")
+    date_string = d.strftime("%Y-%m")
     return date_string
+
+if "--TARGET_MONTH" in sys.argv:
+    s_args = getResolvedOptions(sys.argv, ['TARGET_MONTH'])
+    this_month = s_args['TARGET_MONTH']
+else:
+    this_month = get_today_month_string()
 
 today = get_today_date_string()
 
@@ -52,7 +58,7 @@ dim_hub_item = (
         from_utc_timestamp(col("delivery_start_date"), "Asia/Tokyo"),
     )
     .withColumn("delivery_end_date",  from_utc_timestamp(col("delivery_end_date"), "Asia/Tokyo"))
-    .filter(col("delivery_start_date") == today)
+    .filter(col("delivery_start_date").like(f"{this_month}%"))
 )
 datasource32 = glueContext.create_dynamic_frame.from_catalog(
     database=f"{datacatalog_database}", 
