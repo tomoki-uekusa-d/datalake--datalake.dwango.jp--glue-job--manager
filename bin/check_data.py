@@ -51,9 +51,9 @@ if is_use_target_job_list:
 else:
     for d in datelist:
         d_str = d.strftime("%Y%m%d")
-        # print(f"aws s3 cp s3://{args.bucket}/fact_new_arrivals/site={args.site}/corner={args.corner}/target_date={d_str}/{d_str}_{args.site}_{args.corner}.csv -")
+        print(f"aws s3 cp s3://{args.bucket}/fact_new_arrivals/site={args.site}/corner={args.corner}/target_date={d_str}/{d_str}_{args.site}_{args.corner}.csv -")
         cmd = f"aws s3 cp s3://{args.bucket}/fact_new_arrivals/site={args.site}/corner={args.corner}/target_date={d_str}/{d_str}_{args.site}_{args.corner}.csv -"
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         row_number = int(proc.communicate()[0].decode("utf-8"))
         if row_number > 0:
-            print(f"Found {d_str} {site}_{corner} {row_number}")
+            print(f"Found {d_str} {args.site}_{args.corner} {row_number}")
