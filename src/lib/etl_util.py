@@ -1,9 +1,13 @@
+import time
+import boto3
 from struct import Struct
 from tokenize import String
 import pyspark.sql.functions as F
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, ArrayType, MapType
 from pyspark.sql.window import Window
 
+
+DEFAULT_ATHENA_RESULT_BUCKET = 's3://aws-athena-query-results-861228436192-ap-northeast-1/'
 
 def join_dim_material(
         dim_hub_item,
@@ -172,3 +176,31 @@ def filter_duplicate_tieup_item(df, order_column="score", ascending=False):
     # df_ordered.show(truncate=False) # NOTE: DEBUG
 
     return df_ordered
+
+def load_partition(db, table):
+    athena = boto3.client('athena', region_name='ap-northeast-1')
+    response = athena.start_query_execution(
+        QueryString='MSCK REPAIR TABLE ' + table,
+        QueryExecutionContext={
+            'Database': db
+        },
+        ResultConfiguration={
+            'OutputLocation': DEFAULT_ATHENA_RESULT_BUCKET
+        }
+    )
+
+    res = ""
+    query_running = True
+    while(query_running):
+        status = athena.get_query_execution(
+            QueryExecutionId=response['QueryExecutionId']
+        )
+
+        if status['QueryExecution']['Status']['State'] in ['QUEUED', 'RUNNING']:
+            time.sleep(60)
+            continue
+        else:
+            query_running = False
+            res = status['QueryExecution']['Status']['State']
+
+    return res

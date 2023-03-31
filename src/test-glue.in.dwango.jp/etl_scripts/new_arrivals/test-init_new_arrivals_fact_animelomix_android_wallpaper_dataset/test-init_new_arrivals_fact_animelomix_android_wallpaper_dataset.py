@@ -11,7 +11,7 @@ from pyspark.sql.functions import *
 from datetime import datetime, date, timedelta
 from pytz import timezone
 
-from etl_util import join_dim_material, explode_tracks, aggregate_musics_to_album, filter_duplicate_tieup_item
+from etl_util import join_dim_material, explode_tracks, aggregate_musics_to_album, filter_duplicate_tieup_item, load_partition
 
 
 def get_today_date_string():
@@ -274,5 +274,6 @@ fs.rename(
     Path(f"s3://{s3_bucket_name}/{s3_object_names[0]}"),
     Path(f"s3://{s3_bucket_name}/{s3_base_path}/{s3_base_path_csv_filename}")
 )
+load_partition("test_new_arrivals", "fact_new_arrivals")
 
 job.commit()
